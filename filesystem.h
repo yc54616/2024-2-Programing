@@ -1,3 +1,5 @@
+#ifndef __FILE_SYSTEM__
+#	define __FILE_SYSTEM_
 typedef struct {
 	unsigned char b0 : 1, b1 : 1, b2 : 1, b3 : 1, b4 : 1, b5 : 1, b6 : 1, b7 : 1; 
 } Byte;
@@ -37,3 +39,4 @@ typedef struct {
 	InodeList Ilist[384];
 	DataBlock DBlock[256];
 } FileSystem;
+#endif
