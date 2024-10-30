@@ -1,5 +1,6 @@
 #ifndef __FILE_SYSTEM__
 #	define __FILE_SYSTEM_
+#include <time.h>
 typedef struct {
 	unsigned char b0 : 1, b1 : 1, b2 : 1, b3 : 1, b4 : 1, b5 : 1, b6 : 1, b7 : 1; 
 } Byte;
@@ -9,17 +10,9 @@ typedef struct {
 	Byte data_block_bit[32]; // 8 * 32 bit = 256 bit
 } SuperBlock;
 typedef struct {
-	int year;
-	int month;
-	int day;
-	int hour;
-	int minute;
-	int second;
-} Date;
-typedef struct {
 	Byte typeAndDorS; // Data type ( directory or general file ) and ( Direct or Single Indirect )
 	//                       0                                           0000000
-	Date date;
+	time_t date;
 	unsigned int size;
 	union {
 		unsigned char direct[8];
