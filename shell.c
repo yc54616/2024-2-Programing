@@ -1,10 +1,46 @@
+/*
+라이선스 문구 ==> ?
+*/
+
+/*shell.c
+ :터미널에서 사용자 입력을 받고, 이에 해당하는 명령어(함수)를 실행하는 코드이다.
+ exit입력을 받기 전까지 코드가 실행된다. 입력을 받으면 commandList와 입력 문자열을
+ 비교하여 해당 명령어(함수)를 실행한다.
+
+*/
+/*입력과 실행
+:typedef void (*func)(void)는 명령어 이름을 통해 함수를 호출하기 위해 정의하였다.(motive: 4장 ppt의 마지막 페이지 참조)
+struct functionCall은 함수 이름(문자열)과 함수 이름(함수 호출)으로 구성된다. 함수 이름(문자열)을 입력된 문자열과 비교하여
+함수 호출을 할 수 있다. #define cmd()는 이 구조체에 함수 이름을 넣기 용이하도록 선언하였다.
+*/
+
+/*to-do: how to deal with parameters?
+ $ print a bc
+commands[2].command("a bc")
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #define string(a) #a
-#define cmd(commandName) {#commandName, commandName} //struct commandList 만들기 용이하게 하기 위해 선언 
-typedef void (*func)(void); //함수 호출을 용이하게 하기 위해 선언 
-void print1(void)
+#define commandIntoFunction(commandName) {#commandName, commandName} // struct commandList 만들기 용이하게 하기 위해 선언
+
+typedef void (*func)(void); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
+
+struct functionCallByString
+{
+    /**
+    @brief 함수 호출을 입력받은 문자열을 통해 하기 위해 사용한다.
+    name은 명령어(함수)의 이름(문자열), command는 명령어(함수) 호출이다.
+    name == #command
+    */
+    char name[30];
+    func command;
+};
+
+// commands
+void print1(void) // 테스트용 함수
 {
     printf("1 1 1 1\n");
     return;
@@ -14,79 +50,123 @@ void print2(void)
     printf("2 2 2 2\n");
     return;
 }
-void exit1(void){   //:error: conflicting types for ‘exit’; have ‘void(void)’
-    printf("exit\n");
-    system("kill -INT 888");
-    return;
-}
-void clear(void){
+void clear(void)
+{
+    /**
+ @brief clear. bash에 clear명령어 실행
+ @param void
+ @return void
+ */
     system("clear");
     return;
 }
 
-struct functionCall     //
+// commands list
+struct functionCallByString commandList[500] =
+    {
+        commandIntoFunction(print1),
+        commandIntoFunction(print2),
+        commandIntoFunction(clear)};
+
+// funcions for shell system
+// main에서 실행되는 순으로 정렬하였다
+void print_ID(char *computerId, char *userId)
 {
-    char name[30];
-    func command;
-};
+    /**
+     @brief 기기 및 사용자 ID 출력
+     @param 기기ID, 사용자 ID
+     @return void
+     */
+    printf("%s@%s:", computerId, userId);
+}
+void print_WD(char *wd)
+{
+    /**
+ @brief WorkingDirectory출력; 로직이 추가되면 수정하기
+ @param 로직이 추가되면 수정하기
+ @return void
+ */
+    printf("%s$ ", wd);
+}
 
+void getInput(char **inputString)
+{
+    /**
+     @brief 문자열 입력받기 및 개행문자 제거(없으면 \n이 다음 반복 시에 영향을 준다)
+     @param 입력받은 문자열의 주소를 저장할 char double pointer
+     @return void
+     */
+    char input[1000];
+    fgets(input, sizeof(input), stdin);
+    input[strcspn(input, "\n")] = 0; // 개행문자 제거
+    *inputString = input;            // 주소 넘겨주기
+    return;
+}
+void inputIntoCommand(char *input, char **command)
+{
+    /**
+     @brief input을 띄어쓰기 별로 나누어 command 배열에 저장
+     @example input="cat hello.c" ==> command[0]="cat", command[1]="hello.c"
+     @param input: 입력받은 문자열, command: 문자열을 띄어쓰기로 나누어 저장할 포인터배열
+     @return void
+     */
+    int index = 0;
+    command[index++] = strtok(input, " ");
+    while (command[index - 1] != NULL && index < 20)
+        command[index++] = strtok(NULL, " ");
+    return;
+}
 
-/* $ print a bc
-commands[2].command("a bc")*/
+int executeCommand(char **command)
+{
+    /**
+     @brief 해당 명령어 존재 여부 확인 및 실행
+     @param 입력받은 명령어
+     @return 실행 결과(성공:1, 실패:0)
+     */
+    int check = 0;
+    for (int i = 0; i < 500 && commandList[i].name != NULL; i++)
+        if (strcmp(command[0], commandList[i].name) == 0)
+        {
+            check = 1;
+            commandList[i].command();
+            break;
+        }
+    return check;
+}
 
 int main(void)
 {
-    int index = 0, check;
-    char input[1000];
-    char *command[500];
-    char *wd = "/"; // working directory
-    char *computerId = "red", *id = "redmint";
-    struct functionCall commandList[500] = {
-        cmd(print1),
-        cmd(print2),
-        cmd(exit1),
-        cmd(clear)
-    };
-    while (1)
-    {                                     // command 입력 받기 반복
-        printf("%s@%s:", computerId, id); // id출력
-        {                                 // workig directory 출력
-            printf("%s$ ", wd);
-        }
+    // 선언들
+    int index = 0;
+    bool executionResult;
+    char *inputString;
+    char *command[500];                            // 배열의 한 칸이 char*으로, 하나의 단어를 지칭
+    char *rootDirectory = "/";                     // root directory
+    char *computerId = "red", *userId = "redmint"; // 컴퓨터 및 사용자 ID
 
-        fgets(input, sizeof(input), stdin); // input 입력받기
-        input[strcspn(input, "\n")] = 0;
-        //        printf("1\n");
-        if (input[0] == '\0') // 입력X시 continue;
+    // 실행코드
+    while (1)
+    { // {1.ID및 WD출력   2.command 입력받기 실행하기} 반복
+        print_ID(computerId, userId);
+        print_WD(rootDirectory);
+
+        getInput(&inputString);
+        if (inputString[0] == '\0') // 입력값이 없을 경우 continue;
             continue;
 
-        index = 0;
-        command[index++] = strtok(input, " ");           // 띄어쓰기 기준으로 나누어 저장
-        while (command[index - 1] != NULL && index < 20) // input --> command[]
-            command[index++] = strtok(NULL, " ");
+        inputIntoCommand(inputString, command); // @example: input="cat hello.c"
+                                                //==> command[0]="cat", command[1]="hello.c"
 
-        check = 0;
-	for (int i = 0; i < 500 && commandList[i].name != NULL; i++) // 아이디어: 4장 ppt의 마지막 페이지 참조
- 	{
-	  if (strcmp(command[0], commandList[i].name) == 0)
-            { // command exist?
-                check = 1;
-                // system(commandList[i]);  //==>이런식으로 함수 실행 가능?
-                commandList[i].command();
-                break;
-            }
-        }
+        executionResult = executeCommand(command); // 명령어 실행 및 실행 결과 저장 1:성공, 0:실패
 
-        if (check == 0)
-        {                                        // 명령어 X 시
-            if (strcmp(command[0], "exit") == 0) // exit : 더 효율적으로 할 수 있는 방법?
-            {                                    //exit을 명령어로 처리 시, conflicting error 발생   
-                printf("exit\n");
-                return 0;
-            }
+        if (executionResult == 0) // exit 명령어 처리 및 Command not found
+        {
+            if (strcmp(command[0], "exit") == 0)
+                return 0; // 프로그램 종료
             printf("Command \"%s\" not found\n", command[0]);
             continue;
         }
     }
 }
-//shell 
+// shell
