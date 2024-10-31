@@ -2,7 +2,7 @@
 
 #include "io_stream.h"
 
-SuperBlock getSuperBlock()
+SuperBlock getSuperBlock(void)
 {
 	FILE *file;
 	int i;
