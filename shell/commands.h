@@ -18,7 +18,7 @@ void clear(void)
  @brief clear. bash에 clear명령어 실행
  @param void
  @return void
- */
+ */ 
     system("clear");
     return;
 }
