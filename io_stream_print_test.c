@@ -30,8 +30,8 @@ int main(int argc, char *argv[])
 		printf(" ");
 	}
 	printf("\n");
-	for ( i = 0; i < SIZE_DATABLOCK_IN_SUPERBLOCK; i++ ) {
-		for ( j = 0; j < 8; j++ ) {
+	for (i = 0; i < SIZE_DATABLOCK_IN_SUPERBLOCK; i++) {
+		for (j = 0; j < 8; j++) {
 			printf("%d", super_block.data_block[i].first_bit);
 			super_block.data_block[i].for_shift <<= 1;
 		}
@@ -41,14 +41,14 @@ int main(int argc, char *argv[])
 	while (1) {
 		printf("query for InodeList : ");
 		scanf("%d", &query);
-		if ( query >= 1 && query <= SIZE_INODELIST ) {
+		if (query >= 1 && query <= SIZE_INODELIST) {
 			inode_list = getInodeList(query); // it starts at 1.
 			printInodeList(inode_list);
 		}
 		printf("\n");
 		printf("query for DataBlock : ");
 		scanf("%d", &query);
-		if ( query >= 0 && query <= SIZE_DATABLOCK - 1 ) { // since it starts at 0.
+		if (query >= 0 && query <= SIZE_DATABLOCK - 1) { // since it starts at 0.
 			data_block = getDataBlock(query);
 			printDataBlock(data_block);
 		}
@@ -64,7 +64,7 @@ void printInodeList(InodeList inode_list)
 	printf("date : %ld\n", inode_list.date); // temporary
 	printf("size : %u\n", inode_list.size);
 	printf("directs : ");
-	for ( i = 0; i < 8; i++ )
+	for (i = 0; i < 8; i++)
 		printf("%d ", inode_list.direct[i]);
 	printf("\n");
 }
@@ -72,6 +72,6 @@ void printDataBlock(DataBlock data_block)
 {
 	int i;
 
-	for ( i = 0; i < sizeof(DataBlock); i++ )
+	for (i = 0; i < sizeof(DataBlock); i++)
 		printf("%c", data_block.contents[i]);
 }
