@@ -139,7 +139,7 @@ int main(void)
 {
     // 선언들
     int index = 0;
-    bool executionResult;
+    bool executionResult; // 명령어 실행 성공 여부
     char *inputString;
     char *command[500];                            // 배열의 한 칸이 char*으로, 하나의 단어를 지칭
     char *rootDirectory = "/";                     // root directory
