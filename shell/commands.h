@@ -9,6 +9,11 @@ void print1(char** command) // 테스트용 함수
 }
 void echo(char** command)
 {
+    /**
+ @brief echo
+ @param command
+ @return void
+ */ 
     int index = 1;
     while(command[index]!=NULL)
         printf("%s ", command[index]);
@@ -19,7 +24,7 @@ void clear(char** command)
 {
     /**
  @brief clear. bash에 clear명령어 실행
- @param void
+ @param command
  @return void
  */ 
     system("clear");
