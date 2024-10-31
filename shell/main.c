@@ -10,6 +10,11 @@ struct functionCall은 함수 이름(문자열)과 함수 이름(함수 호출)�
 함수 호출을 할 수 있다. #define cmd()는 이 구조체에 함수 이름을 넣기 용이하도록 선언하였다.
 */
 
+/*명령어를 추가하는 방법 
+1. 함수 작성 - parameter: char** command로 통일해야함 (typdef 보기) 
+2. FunctionCallByString에 함수이름 추가하기 
+*/
+
 /*to-do: how to deal with parameters?
  $ print a bc
 commands[2].command("a bc")

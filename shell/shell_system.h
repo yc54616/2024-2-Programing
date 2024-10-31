@@ -12,7 +12,7 @@ commands.h를 포함한다.
 #define string(a) #a
 #define commandIntoFunction(commandName) {#commandName, commandName} // struct g_command_list 만들기 용이하게 하기 위해 선언
 
-typedef void (*func)(void); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
+typedef void (*func)(char **); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
 
 struct FunctionCallByString
 {    /**
@@ -28,7 +28,7 @@ struct FunctionCallByString
 struct FunctionCallByString g_command_list[500] =
     {
         commandIntoFunction(print1),
-        commandIntoFunction(print2),
+        commandIntoFunction(echo),
         commandIntoFunction(clear)};
 
 // funcions for shell system
@@ -92,7 +92,7 @@ int ExecuteCommand(char **command)
         if (strcmp(command[0], g_command_list[i].name) == 0)
         {
             check = 1;
-            g_command_list[i].command();
+            g_command_list[i].command(command);
             break;
         }
     return check;
