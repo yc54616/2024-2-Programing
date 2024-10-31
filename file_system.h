@@ -1,3 +1,5 @@
+#include <time.h>
+
 #ifndef __FILE_SYSTEM__
 #	define __FILE_SYSTEM__
 #	define FILENAME "myfs"
@@ -8,20 +10,23 @@
 #	define SIZE_DATABLOCK_IN_SUPERBLOCK 32 // TOO
 #	define SIZE_INODELIST 128
 #	define SIZE_DATABLOCK 256
-#include <time.h>
+#	define DIRECTORY 1
+#	define GENERAL 0
+
 typedef union {
 	struct {
-		unsigned char lastBit : 1, skip : 6, firstBit : 1; 
+		unsigned char last_bit : 1, skip : 6, first_bit : 1; 
 	};
-	unsigned char forShift;
+	unsigned char for_shift;
 } Byte;
 
 typedef struct {
 	Byte inode_list[16]; // 8 * 16 bit = 128 bit
 	Byte data_block[32]; // 8 * 32 bit = 256 bit
 } SuperBlock;
+
 typedef struct {
-	Byte typeAndDorS; // Data type ( directory or general file ) and ( Direct or Single Indirect )
+	Byte type_and_direct_or_indirect; // Data type ( directory or general file ) and ( Direct or Single Indirect )
 	//                       0                                           0000000
 	time_t date;
 	unsigned int size;
@@ -35,7 +40,6 @@ typedef union {
     unsigned char subfiles[32][8]; // Case it is directory
     // 7 bytes : name 1 byte : inode
     unsigned char contents[256];   // Case it is general file
-    Byte content_bin[256];
 } DataBlock;
 
 #endif
