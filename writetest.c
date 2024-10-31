@@ -1,18 +1,36 @@
-/* It's too simple code to comment.
-   ( In actual, I expect you to read this without comments for understanding entire code. )*/
 #include "IOStream.h"
 #include <stdio.h>
 
+// bootblock 2byte=16bit
+// superblock 128+256bit=48bit*8bit=48byte=384bit
+// inode 32byte*128=4096byte=32768bit
+// dataBlock 256byte*256=65536byte=524288bit
+// total 69682byte=557456
 void printInodeList(InodeList il);
 void printDataBlock(DataBlock db);
+int main()
+{
+    initFilesystem();
+    
+    for(int i = 1; i <= 384; i++){
+        setSuperBlock(i, 0);
+    }
+    setSuperBlock(384, 1);
 
-int main() {
-	printf("%ld\n", sizeof(DataBlock));
-	SuperBlock sb = getSuperBlock();
-	InodeList il;
-	DataBlock db; // ?
-	int i, j;
+    time_t curTime;
+        
+    InodeList il;
+    int i, j;
 	int query;
+    time(&curTime);
+    unsigned char address[8] = {128,188,12,13,1,1,9,10};
+    setInodeList(2, 1, 0, curTime, 0, address);
+    Byte test[SIZE_DATABLOCK] = {0,};
+    test[0].forShift = 'a';
+    setDataBlock(0, test);
+
+	SuperBlock sb = getSuperBlock();
+	DataBlock db; // ?
 	for ( i = 0; i < SIZE_INODELIST_IN_SUPERBLOCK; i++ ) {
 		for ( j = 0; j < 8; j++ ) {
 			printf("%d", sb.inode_list[i].firstBit);

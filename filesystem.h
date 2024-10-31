@@ -11,6 +11,9 @@
 #include <time.h>
 typedef union {
 	struct {
+		unsigned char b7 : 1, b6 : 1, b5 : 1, b4 : 1, b3 : 1, b2 : 1, b1 : 1, b0 : 1;
+	};
+	struct {
 		unsigned char lastBit : 1, skip : 6, firstBit : 1; 
 	};
 	unsigned char forShift;
