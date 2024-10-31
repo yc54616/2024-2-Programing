@@ -23,8 +23,10 @@ int main(int argc, char *argv[])
 			super_block.inode_list[i].for_shift <<= 1;
 		}
 		/* In this for-loop, the origin SuperBlock are going damaged.
-		At last after the loop, SuperBlock includes only 0s.
-		If it might cause fundamentally unfixable defect-to fix this, need to fix the logic or struct, The wise will bring the fixed opinion.*/
+		 * At last after the loop, SuperBlock includes only 0s.
+		 * If it might cause fundamentally unfixable defect-to fix this, need to fix the logic or struct,
+		 * The wise will bring the fixed opinion.
+		 */
 		printf(" ");
 	}
 	printf("\n");
