@@ -14,16 +14,14 @@ struct functionCall은 함수 이름(문자열)과 함수 이름(함수 호출)�
 함수 호출을 할 수 있다. #define cmd()는 이 구조체에 함수 이름을 넣기 용이하도록 선언하였다.
 */
 
-/*명령어를 추가하는 방법 
-1. 함수 작성 - parameter: char** command로 통일해야함 (typdef 보기) 
-2. FunctionCallByString에 함수이름 추가하기 
+/*명령어를 추가하는 방법
+1. 함수 작성 - parameter: char** command로 통일해야함 (typdef 보기)
+2. FunctionCallByString에 함수이름 추가하기
 */
 /*to-do: how to deal with parameters?
  $ print a bc
 commands[2].command("a bc")
 */
-
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +30,7 @@ commands[2].command("a bc")
 #define string(a) #a
 #define commandIntoFunction(commandName) {#commandName, commandName} // struct g_command_list 만들기 용이하게 하기 위해 선언
 
-typedef void (*func)(char**); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
+typedef void (*func)(char **); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
 
 struct FunctionCallByString
 {
@@ -46,30 +44,52 @@ struct FunctionCallByString
 };
 
 // commands
-void print1(char** command) // 테스트용 함수
+void print1(char **command) // 테스트용 함수
 {
     printf("1 1 1 1\n");
     return;
 }
-void echo(char** command)
+void echo(char **command)
 {
+    /**
+    @brief echo. bash에 echo명령어 실행
+    @param command
+    @return void
+    */
     int index = 1;
-    if(command[index] == NULL){
-       ; 
-    } //예외처리: 아무것도 입력되지 않았을떄 
-    while(command[index]!=NULL){
+    while (command[index] != NULL)
+    {
         printf("%s ", command[index++]);
     }
     printf("\n");
     return;
 }
-void clear(char** command)
+void command(char **command)
 {
     /**
- @brief clear. bash에 clear명령어 실행
- @param void
- @return void
- */
+    @brief bash에 명령어를 실행한다. cmd에 command[i]를 이어붙이고 system을 통해 bash 명령어 처리하였다.
+    @param void
+    @return void
+    */
+    char cmd[50];
+    strcpy(cmd, command[1]);                 // cmd = command[1]으로 한다면, cmd에 command[]의 주소가 들어가서
+    for (int i = 2; command[i] != NULL; i++) // strcat(cmd, " ") 다음에 command[2]=" "로 바뀜
+    {
+        strcat(cmd, " ");
+        strcat(cmd, command[i]);
+    }
+    // printf("cmd: %s\n", cmd);
+    system(cmd);
+    return;
+}
+
+void clear(char **command)
+{
+    /**
+    @brief clear. bash에 clear명령어 실행
+    @param void
+    @return void
+    */
     system("clear");
     return;
 }
@@ -79,7 +99,8 @@ struct FunctionCallByString g_command_list[500] =
     {
         commandIntoFunction(print1),
         commandIntoFunction(echo),
-        commandIntoFunction(clear)};
+        commandIntoFunction(clear),
+        commandIntoFunction(command)};
 
 // funcions for shell system
 // main에서 실행되는 순으로 정렬하였다
@@ -154,8 +175,8 @@ int main(void)
     int index = 0;
     bool execution_result; // 명령어 실행 성공 여부
     char *inputString;
-    char *command[500];                            // 배열의 한 칸이 char*으로, 하나의 단어를 지칭
-    char *root_directory = "/";                     // root directory
+    char *command[500];                              // 배열의 한 칸이 char*으로, 하나의 단어를 지칭
+    char *root_directory = "/";                      // root directory
     char *computer_id = "red", *user_id = "redmint"; // 컴퓨터 및 사용자 ID
 
     // 실행코드
@@ -183,4 +204,3 @@ int main(void)
     }
 }
 // shell
-

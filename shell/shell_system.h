@@ -1,7 +1,7 @@
 /*shell_system.h
 쉘 시스템을 구성하는 헤더파일, 전처리기, 구조체, 함수들이다.
 자세한 설명은 shell.c를 참조하면 된다.
-commands.h를 포함한다. 
+commands.h를 포함한다.
 */
 
 #include <stdio.h>
@@ -15,11 +15,11 @@ commands.h를 포함한다.
 typedef void (*func)(char **); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
 
 struct FunctionCallByString
-{    /**
-    @brief 함수 호출을 입력받은 문자열을 통해 하기 위해 사용한다.
-    name은 명령어(함수)의 이름(문자열), command는 명령어(함수) 호출이다.
-    name == #command
-    */
+{ /**
+ @brief 함수 호출을 입력받은 문자열을 통해 하기 위해 사용한다.
+ name은 명령어(함수)의 이름(문자열), command는 명령어(함수) 호출이다.
+ name == #command
+ */
     char name[30];
     func command;
 };
@@ -29,7 +29,8 @@ struct FunctionCallByString g_command_list[500] =
     {
         commandIntoFunction(print1),
         commandIntoFunction(echo),
-        commandIntoFunction(clear)};
+        commandIntoFunction(clear),
+        commandIntoFunction(command)};
 
 // funcions for shell system
 // main에서 실행되는 순으로 정렬하였다
