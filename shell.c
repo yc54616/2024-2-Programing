@@ -4,7 +4,7 @@
 
 /*shell.c
  :터미널에서 사용자 입력을 받고, 이에 해당하는 명령어(함수)를 실행하는 코드이다.
- exit입력을 받기 전까지 코드가 실행된다. 입력을 받으면 commandList와 입력 문자열을
+ exit입력을 받기 전까지 코드가 실행된다. 입력을 받으면 g_command_list와 입력 문자열을
  비교하여 해당 명령어(함수)를 실행한다.
 
 */
@@ -24,11 +24,11 @@ commands[2].command("a bc")
 #include <string.h>
 #include <stdbool.h>
 #define string(a) #a
-#define commandIntoFunction(commandName) {#commandName, commandName} // struct commandList 만들기 용이하게 하기 위해 선언
+#define commandIntoFunction(commandName) {#commandName, commandName} // struct g_command_list 만들기 용이하게 하기 위해 선언
 
 typedef void (*func)(void); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
 
-struct functionCallByString
+struct FunctionCallByString
 {
     /**
     @brief 함수 호출을 입력받은 문자열을 통해 하기 위해 사용한다.
@@ -62,7 +62,7 @@ void clear(void)
 }
 
 // commands list
-struct functionCallByString commandList[500] =
+struct FunctionCallByString g_command_list[500] =
     {
         commandIntoFunction(print1),
         commandIntoFunction(print2),
@@ -70,7 +70,7 @@ struct functionCallByString commandList[500] =
 
 // funcions for shell system
 // main에서 실행되는 순으로 정렬하였다
-void print_ID(char *computerId, char *userId)
+void Print_ID(char *computerId, char *userId)
 {
     /**
      @brief 기기 및 사용자 ID 출력
@@ -79,7 +79,7 @@ void print_ID(char *computerId, char *userId)
      */
     printf("%s@%s:", computerId, userId);
 }
-void print_WD(char *wd)
+void Print_WD(char *wd)
 {
     /**
  @brief WorkingDirectory출력; 로직이 추가되면 수정하기
@@ -89,7 +89,7 @@ void print_WD(char *wd)
     printf("%s$ ", wd);
 }
 
-void getInput(char **inputString)
+void GetInput(char **inputString)
 {
     /**
      @brief 문자열 입력받기 및 개행문자 제거(없으면 \n이 다음 반복 시에 영향을 준다)
@@ -102,7 +102,7 @@ void getInput(char **inputString)
     *inputString = input;            // 주소 넘겨주기
     return;
 }
-void inputIntoCommand(char *input, char **command)
+void InputIntoCommand(char *input, char **command)
 {
     /**
      @brief input을 띄어쓰기 별로 나누어 command 배열에 저장
@@ -117,7 +117,7 @@ void inputIntoCommand(char *input, char **command)
     return;
 }
 
-int executeCommand(char **command)
+int ExecuteCommand(char **command)
 {
     /**
      @brief 해당 명령어 존재 여부 확인 및 실행
@@ -125,11 +125,11 @@ int executeCommand(char **command)
      @return 실행 결과(성공:1, 실패:0)
      */
     int check = 0;
-    for (int i = 0; i < 500 && commandList[i].name != NULL; i++)
-        if (strcmp(command[0], commandList[i].name) == 0)
+    for (int i = 0; i < 500 && g_command_list[i].name != NULL; i++)
+        if (strcmp(command[0], g_command_list[i].name) == 0)
         {
             check = 1;
-            commandList[i].command();
+            g_command_list[i].command();
             break;
         }
     return check;
@@ -139,28 +139,28 @@ int main(void)
 {
     // 선언들
     int index = 0;
-    bool executionResult; // 명령어 실행 성공 여부
+    bool execution_result; // 명령어 실행 성공 여부
     char *inputString;
     char *command[500];                            // 배열의 한 칸이 char*으로, 하나의 단어를 지칭
-    char *rootDirectory = "/";                     // root directory
-    char *computerId = "red", *userId = "redmint"; // 컴퓨터 및 사용자 ID
+    char *root_directory = "/";                     // root directory
+    char *computer_id = "red", *user_id = "redmint"; // 컴퓨터 및 사용자 ID
 
     // 실행코드
     while (1)
     { // {1.ID및 WD출력   2.command 입력받기 실행하기} 반복
-        print_ID(computerId, userId);
-        print_WD(rootDirectory);
+        Print_ID(computer_id, user_id);
+        Print_WD(root_directory);
 
-        getInput(&inputString);
+        GetInput(&inputString);
         if (inputString[0] == '\0') // 입력값이 없을 경우 continue;
             continue;
 
-        inputIntoCommand(inputString, command); // @example: input="cat hello.c"
+        InputIntoCommand(inputString, command); // @example: input="cat hello.c"
                                                 //==> command[0]="cat", command[1]="hello.c"
 
-        executionResult = executeCommand(command); // 명령어 실행 및 실행 결과 저장 1:성공, 0:실패
+        execution_result = ExecuteCommand(command); // 명령어 실행 및 실행 결과 저장 1:성공, 0:실패
 
-        if (executionResult == 0) // exit 명령어 처리 및 Command not found
+        if (execution_result == 0) // exit 명령어 처리 및 Command not found
         {
             if (strcmp(command[0], "exit") == 0)
                 return 0; // 프로그램 종료
@@ -170,3 +170,4 @@ int main(void)
     }
 }
 // shell
+
