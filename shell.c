@@ -14,10 +14,16 @@ struct functionCall은 함수 이름(문자열)과 함수 이름(함수 호출)�
 함수 호출을 할 수 있다. #define cmd()는 이 구조체에 함수 이름을 넣기 용이하도록 선언하였다.
 */
 
+/*명령어를 추가하는 방법 
+1. 함수 작성 - parameter: char** command로 통일해야함 (typdef 보기) 
+2. FunctionCallByString에 함수이름 추가하기 
+*/
 /*to-do: how to deal with parameters?
  $ print a bc
 commands[2].command("a bc")
 */
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +32,7 @@ commands[2].command("a bc")
 #define string(a) #a
 #define commandIntoFunction(commandName) {#commandName, commandName} // struct g_command_list 만들기 용이하게 하기 위해 선언
 
-typedef void (*func)(void); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
+typedef void (*func)(char**); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
 
 struct FunctionCallByString
 {
@@ -40,17 +46,24 @@ struct FunctionCallByString
 };
 
 // commands
-void print1(void) // 테스트용 함수
+void print1(char** command) // 테스트용 함수
 {
     printf("1 1 1 1\n");
     return;
 }
-void print2(void)
+void echo(char** command)
 {
-    printf("2 2 2 2\n");
+    int index = 1;
+    if(command[index] == NULL){
+       ; 
+    } //예외처리: 아무것도 입력되지 않았을떄 
+    while(command[index]!=NULL){
+        printf("%s ", command[index++]);
+    }
+    printf("\n");
     return;
 }
-void clear(void)
+void clear(char** command)
 {
     /**
  @brief clear. bash에 clear명령어 실행
@@ -65,7 +78,7 @@ void clear(void)
 struct FunctionCallByString g_command_list[500] =
     {
         commandIntoFunction(print1),
-        commandIntoFunction(print2),
+        commandIntoFunction(echo),
         commandIntoFunction(clear)};
 
 // funcions for shell system
@@ -129,7 +142,7 @@ int ExecuteCommand(char **command)
         if (strcmp(command[0], g_command_list[i].name) == 0)
         {
             check = 1;
-            g_command_list[i].command();
+            g_command_list[i].command(command);
             break;
         }
     return check;
