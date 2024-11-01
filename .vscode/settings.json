@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "*.embeddedhtml": "html",
-        "iostream.h": "c",
-        "filesystem.h": "c",
-        "stdio.h": "c",
-        "time.h": "c"
-    }
-}

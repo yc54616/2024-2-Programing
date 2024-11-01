@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "fs_status_print.h"
+
 #ifndef __SHELL__
 #	define __SHELL__
 #	define string(a) #a
@@ -23,12 +25,6 @@ void print1(char **command); // 테스트용 함수
 void echo(char **command);
 void command(char **command);
 void clear(char **command);
-struct FunctionCallByString g_command_list[500] =
-    {
-        commandIntoFunction(print1),
-        commandIntoFunction(echo),
-        commandIntoFunction(clear),
-        commandIntoFunction(command)};
 void Print_ID(char *computerId, char *userId);
 void Print_WD(char *wd);
 void GetInput(char **inputString);

@@ -10,6 +10,7 @@
 #	define SIZE_DATABLOCK_IN_SUPERBLOCK 32 // TOO
 #	define SIZE_INODELIST 128
 #	define SIZE_DATABLOCK 256
+#	define SIZE_DIRECT_POINTER 8
 #	define DIRECTORY 1
 #	define GENERAL 0
 
@@ -18,25 +19,24 @@ typedef union {
 		unsigned char b7 : 1, b6 : 1, b5 : 1, b4 : 1, b3 : 1, b2 : 1, b1 : 1, b0 : 1;
 	};
 	struct {
-		unsigned char lastBit : 1, skip : 6, firstBit : 1;
+		unsigned char last_bit : 1, skip : 6, first_bit : 1;
 	};
 	unsigned char for_shift;
 } Byte;
 
 typedef struct {
-	Byte inode_list[16]; // 8 * 16 bit = 128 bit
-	Byte data_block[32]; // 8 * 32 bit = 256 bit
+	Byte inode_list[SIZE_INODELIST/8]; // 16 bytes = 128 bit
+	Byte data_block[SIZE_DATABLOCK/8]; // 32 bytes = 256 bit
 } SuperBlock;
 
 typedef struct {
-	Byte type_and_direct_or_indirect; // Data type ( directory or general file ) and ( Direct or Single Indirect )
-	//                       0                                           0000000
-	time_t date;
+	unsigned char file_mode; // excluding permission ex) rwxr--r--
+	time_t access_date;
+	time_t birth_date;
 	unsigned int size;
-	union {
-		unsigned char direct[8];
-		unsigned char single;
-	};
+	unsigned char reference_count; // referring to number of pointers are consisted by a file.
+	unsigned char direct_address[SIZE_DIRECT_POINTER];
+	unsigned char single_indirect_address;
 } InodeList;
 
 typedef union {

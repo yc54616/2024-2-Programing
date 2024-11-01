@@ -25,8 +25,6 @@ commands[2].command("a bc")
 
 #include "shell.h"
 
-typedef void (*func)(char **); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
-
 // commands
 void print1(char **command) // 테스트용 함수
 {
@@ -84,7 +82,11 @@ struct FunctionCallByString g_command_list[500] =
         commandIntoFunction(print1),
         commandIntoFunction(echo),
         commandIntoFunction(clear),
-        commandIntoFunction(command)};
+        commandIntoFunction(command),
+    	commandIntoFunction(myinode),
+    	commandIntoFunction(mydatablock),
+    	commandIntoFunction(mystatus),
+    };
 
 // funcions for shell system
 // main에서 실행되는 순으로 정렬하였다
