@@ -36,7 +36,6 @@ void setBit(Byte *byte, int index, bool bit)
 
 void initFilesystem()
 {
-
 	SuperBlock sb; // = getSuperBlock();
 	InodeList in[SIZE_INODELIST];
 	DataBlock db[SIZE_DATABLOCK];
@@ -45,19 +44,22 @@ void initFilesystem()
 	{
 		for (int j = 0; j < 8; j++)
 		{
-			sb.inode_list[i].forShift >>= 1;
-			sb.inode_list[i].firstBit = 0;
+			sb.inode_list[i].for_shift >>= 1;
+			sb.inode_list[i].first_bit = 0;
 		}
 	}
 	for (int i = 0; i < SIZE_INODELIST; i++)
 	{
-		in[i].typeAndDorS.forShift = 0;
-		in[i].date = 0;
+		in[i].file_mode = 0;
+		in[i].access_date = 0;
+		in[i].birth_date = 0;
 		in[i].size = 0;
-		for (int j = 0; j < 8; j++)
+		in[i].reference_count = 0;
+		for (int j = 0; j < SIZE_DIRECT_POINTER; j++)
 		{
-			in[i].direct[j] = 0;
+			in[i].direct_address[j] = 0;
 		}
+		in[i].single_indirect_address = 0;
 	}
 	for (int i = 0; i < SIZE_DATABLOCK; i++)
 	{
@@ -113,7 +115,7 @@ void setSuperBlock(int bitIndex, bool bit)
 // date: date
 // size: file size
 // address: 일단 SingleIndirect이더라도 맨 첫 배열만 사용
-void setInodeList(int index, bool type, bool dAndI, time_t date, unsigned int size, unsigned char address[6]) // 1~128
+void setInodeList(int index, bool file_mode, time_t access_date, time_t birth_date, unsigned int size, unsigned char reference_count, unsigned char *direct_address, unsigned char single_indirect_address) // 1~128
 {																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
 	FILE *file;
 	file = fopen(FILENAME, "rb+");
@@ -123,32 +125,27 @@ void setInodeList(int index, bool type, bool dAndI, time_t date, unsigned int si
 	// 2 -> 0,1
 	// 8 -> 0,7
 	// 128 -> 15,7
-	InodeList in;
-	in.typeAndDorS.firstBit = type;
-	in.typeAndDorS.lastBit = dAndI;
-	in.date = date;
-	in.size = size;
-	if (dAndI == 0)
-	{
-		for (int i = 0; i < 8; i++)
-		{
-			in.direct[i] = address[i];
-		}
+	InodeList inode_list;
+	inode_list.file_mode = file_mode;
+	inode_list.access_date = access_date;
+	inode_list.birth_date = birth_date;
+	inode_list.size = size;
+	inode_list.reference_count = reference_count;
+	for (int i = 0; i < 8; i++){
+		inode_list.direct_address[i] = direct_address[i];
 	}
-	else
-	{
-		in.single = address[0];
-	}
+	inode_list.single_indirect_address = single_indirect_address;
 
-	fseek(file, 32 * (index - 1), SEEK_CUR);
-	fwrite(&in, sizeof(in), 1, file);
+
+	fseek(file, sizeof(inode_list) * (index - 1), SEEK_CUR);
+	fwrite(&inode_list, sizeof(inode_list), 1, file);
 
 	fclose(file);
 }
 
 // address : datablock address
 // type : directory=1 general file=0
-void setDataBlock(int address, Byte content_bin[SIZE_DATABLOCK]) // 1~128
+void setDataBlock(int address, unsigned char *contents) // 1~128
 {																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
 	FILE *file;
 	file = fopen(FILENAME, "rb+");
@@ -159,13 +156,14 @@ void setDataBlock(int address, Byte content_bin[SIZE_DATABLOCK]) // 1~128
 	// 2 -> 0,1
 	// 8 -> 0,7
 	// 128 -> 15,7
-	DataBlock db;
-	for(int i = 0; i < SIZE_DATABLOCK; i++){
-		db.content_bin[i] = content_bin[i];
+	DataBlock data_block;
+
+	for(int i = 0, loop_size = sizeof(DataBlock); i < loop_size; i++){
+		data_block.contents[i] = contents[i];
 	}
 	
 	fseek(file, sizeof(DataBlock) * address, SEEK_CUR);
-	fwrite(&db, sizeof(db), 1, file);
+	fwrite(&data_block, sizeof(data_block), 1, file);
 
 	fclose(file);
 }
