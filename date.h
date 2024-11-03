@@ -8,9 +8,8 @@ typedef struct {
   int hour;
   int minute;
   int second;
-}Date;
+}Date date[128];
 
-Date date[128];
 void SaveDate(int inode_num);
 void PrintDate(int inode_num);
 
