@@ -30,5 +30,5 @@ void SaveDate(Date *date)
 
 void PrintDate(Date date)
 {
-  printf("%4d/%02d/%02d %02d:%02d:%02d", date.year, date.month, date.day,     date.hour, date.minute, date.second);
+  printf("%4d/%02d/%02d %02d:%02d:%02d", date.year, date.month, date.day, date.hour, date.minute, date.second);
 }
