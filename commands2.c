@@ -16,7 +16,7 @@ void mypwd(char **commands)
 	chainedDirectory current_directory;
 	unsigned char (*directory_names)[8];
 
-	directory_names = (unsigned char (*)[8]) malloc(sizeof(unsigned char (*)[8]) * depth_working_directory); // from global field in shell.h
+	directory_names = (unsigned char (*)[8]) malloc(sizeof(unsigned char (*)[8]) * depth_working_directory); // from the global field in the shell.h
 	current_directory = working_directory;
 	for (i = 0; i < depth_working_directory; i++) {
 		for (j = 0; j < 7; j++)
@@ -25,12 +25,12 @@ void mypwd(char **commands)
 		current_directory = *(current_directory.parent);
 	}
 
-	/* now, directory_name consists of all directories to reach the working directory from root in descending order
+	/* now, directory_name consists of all directories that reach the working directory from the root in descending order
 	 * ex) /a/b/c/d
 	 * => d c b a
 	 */
 
-	/* so, we need to print them in decsending order */
+	/* so, we need to print them in descending order */
 	for (i = depth_working_directory - 1; i >= 0; i--)
 		printf("/%s", *(directory_names + i));
 	printf("\n");
@@ -56,11 +56,11 @@ static int compare_directory_names(unsigned char *dir1, unsigned char *dir2)
 /* Algorithm's below
  * from i = 0 to 7(Max length of directory name)
  * in i 'th place :
- * 	1. if there exist different character in same place before the comparison => They are different.
- *	2. (else) if this place is end of the string in both sides => They are same. ( close for-loop )
- *	( Why we break this comparison is there can exist different string next to its ending )
+ * 	1. If different characters exist in the same place before the comparison => They are different.
+ *	2. (else) If this place is the end of the string on both sides => They are the same. ( close for-loop )
+ *	( Why we break this comparison is that there can exist different strings next to its ending )
  *	ex) {'a', 'b', '\0', 32, ...} == {'a', 'b', '\0', 123, ...} but 32 != 123
- * Before it, we saw all posibillity.
+ * Before it, we saw all posibillities. 
  */
 
 static int _mycd(unsigned char *directory_name)
@@ -86,7 +86,7 @@ static int _mycd(unsigned char *directory_name)
 		return 0;
 	else {
 		inode_list = getInodeList(working_directory.my_inode_number);
-		if (inode_list.reference_count == 9) { // If it uses single indirect pointer
+		if (inode_list.reference_count == 9) { // If it uses a single indirect pointer
 			indirect_block = getDataBlock(inode_list.single_indirect_address);
 			number_of_using_pointer = indirect_block.contents[0];
 			for (i = 1; i < number_of_using_pointer; i++) {
@@ -103,7 +103,7 @@ static int _mycd(unsigned char *directory_name)
 					}
 				}
 			}
-			/* Processing the one remaining data block which generally not takes up full space */
+			/* Processing the one remaining data block, which generally does not take up the entire space */
 			data_block = getDataBlock(indirect_block.contents[i]);
 			remaining_space = inode_list.size % sizeof(DataBlock);
 			for (j = 0; j < remaining_space / 8; j++) {
@@ -118,7 +118,7 @@ static int _mycd(unsigned char *directory_name)
 				}
 			}
 				
-			return -1; // There are no such directory.
+			return -1; // There is no such directory.
 		} else { // It uses direct pointer(s)
 			for (i = 0; i < inode_list.reference_count - 1; i++) {
 				data_block = getDataBlock(inode_list.direct_address[i]);
@@ -134,7 +134,7 @@ static int _mycd(unsigned char *directory_name)
 					}
 				}
 			}
-			/* Processing the one remaining data block which generally not takes up full space */
+			/* Processing the one remaining data block, which generally does not take up the entire space */
 			data_block = getDataBlock(inode_list.direct_address[i]);
 			remaining_space = inode_list.size % sizeof(DataBlock);
 			for (j = 0; j < remaining_space / 8; j++) {
@@ -149,7 +149,7 @@ static int _mycd(unsigned char *directory_name)
 				}
 			}
 
-			return -1; // There are no such directory.
+			return -1; // There is no such directory.
 		}
 	}
 }
@@ -184,7 +184,7 @@ void mycd(char **commands)
 				c = argument[written_characters];
 				written_characters++;
 				if (c != '\0' && c != '/')
-					// The length of directory name field exceeds
+					// The length of the directory name field exceeds
 			}
 			if (_mycd(directory_name) == -1) { // If there doesn't exist such directory
 				// TODO
