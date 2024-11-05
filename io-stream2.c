@@ -62,8 +62,8 @@ void SetOriginalSuperBlockStructure() {
 void SetInitSuperBlock() { //SuperBlock을 초기값으로 설정
     FILE *super_block_txt;
     super_block_txt = fopen("super-block.txt", "w");
-    char super_block_bit[384] = {1,};
-    //for(int i = 1; i < 384; i++) super_block_bit[i] = '0';
+    char super_block_bit[384] = {'1'};
+    for(int i = 1; i < 384; i++) super_block_bit[i] = '0';
     if(super_block_txt == NULL) printf("file open failed"); //test
     fputs(super_block_bit, super_block_txt);
 }
@@ -98,12 +98,12 @@ void GetSuperBlockFromTxtFile() {
     printf("%c", s_ConvertedSuperBlock.data_block_bit[0]); //test
 }
 
-void SaveSuperBlockFromTxtFile() {
+void SaveSuperBlockatTxtFile() {
     FILE *super_block_txt;
     super_block_txt = fopen("super-block.txt", "w");
     if(super_block_txt == NULL) printf("file open failed"); //test
     fputs(s_ConvertedSuperBlock.inode_list_bit, super_block_txt); //fputs(const char* str, FILE* stream);
-    //fputs(s_ConvertedSuperBlock.data_block_bit, super_block_txt);
+    fputs(s_ConvertedSuperBlock.data_block_bit, super_block_txt);
     fclose(super_block_txt);
 }
 
@@ -121,5 +121,5 @@ int main() { //for test
     for(int i = 0; i < 48; i++) printf("%u", s_SuperBlock.inode_list[i].b0); //test
     //명령어 수행
     SetConvertedSuperBlockStructure();
-    SaveSuperBlockFromTxtFile();
+    SaveSuperBlockatTxtFile();
 }
