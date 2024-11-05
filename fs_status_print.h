@@ -1,11 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h> // to use strtoi
+#ifndef __FS_STATUS_PRINT_H__
+#	define __FS_STATUS_PRINT_H__ 1
+#	include <stdio.h>
+#	include <stdlib.h> // to use strtoi
 
-#include "file_system.h"
-#include "io_stream.h"
+#	include "file_system.h"
+#	include "io_stream.h"
 
-#ifndef __FS_STATUS_PRINT__
-#	define __FS_STATUS_PRINT__
 #	define errmsg printf
 void myinode(char **command);
 void mydatablock(char **command);

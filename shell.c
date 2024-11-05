@@ -25,6 +25,14 @@ commands[2].command("a bc")
 
 #include "shell.h"
 
+/* definitions of global variable */
+chainedDirectory working_directory = {{0}, 1, &working_directory}; // It makes a stack.
+int depth_working_directory = 0; // It refers to the depth which is the number how many directories are there to reach here from '/'
+/* example
+ * /home/yhj/advanced_programming/project => 4
+ * / => 0
+ */
+
 // commands
 void print1(char **command) // 테스트용 함수
 {
@@ -86,6 +94,9 @@ struct FunctionCallByString g_command_list[500] =
     	commandIntoFunction(myinode),
     	commandIntoFunction(mydatablock),
     	commandIntoFunction(mystatus),
+	commandIntoFunction(mypwd),
+	commandIntoFunction(mycd),
+	commandIntoFunction(mytree)
     };
 
 // funcions for shell system
@@ -158,6 +169,25 @@ int ExecuteCommand(char **command)
 int main(void)
 {
     // 선언들
+    working_directory.my_name[0] = 'e';
+    working_directory.my_name[1] = 'x';
+    working_directory.my_name[2] = 'a';
+    working_directory.my_name[3] = 'm';
+    working_directory.my_name[4] = 'p';
+    working_directory.my_name[5] = 'l';
+    working_directory.my_name[6] = 'e';
+    working_directory.my_inode_number = 5;
+
+    chainedDirectory a = { {'e', 'x', '3', 0}, 4, NULL };
+    chainedDirectory b = { {'e', 'x', '2', 0}, 3, NULL };
+    chainedDirectory c = { {'e', 'x', '1', 0}, 2, NULL };
+    chainedDirectory root = { { 0 }, 1, NULL };
+    root.parent = &root;
+    c.parent = &root;
+    b.parent = &c;
+    a.parent = &b;
+    working_directory.parent = &a;
+    depth_working_directory = 4;
     int index = 0;
     bool execution_result; // 명령어 실행 성공 여부
     char *inputString;

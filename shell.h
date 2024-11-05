@@ -1,14 +1,22 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
+#ifndef __SHELL_H__
+#	define __SHELL_H__ 1
 
-#include "fs_status_print.h"
+#	include <stdio.h>
+#	include <stdlib.h>
+#	include <string.h>
+#	include <stdbool.h>
 
-#ifndef __SHELL__
-#	define __SHELL__
+#	include "fs_status_print.h"
+#	include "commands2.h"
+
 #	define string(a) #a
 #	define commandIntoFunction(commandName) {#commandName, commandName} // struct g_command_list 만들기 용이하게 하기 위해 선언
+typedef struct chainedDirectory{
+	unsigned char my_name[7];
+	unsigned char my_inode_number;
+
+	struct chainedDirectory *parent;
+} chainedDirectory; // It has parent pointing to its parent, .. goes on the end, finally we can arrives at root
 typedef void (*func)(char **); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
 struct FunctionCallByString
 {
