@@ -48,8 +48,11 @@ int getExistence(unsigned char *path)
 	copyWorkingDirectory(&virtual_working_directory); // We must free them.
 	virtual_depth_working_directory = depth_working_directory;
 
+	if (depth_working_directory == 1)
+		return 1;
+
 	if (path == NULL) { // '$ mycd' => go to the root
-		clearVWD(&virtual_working_directory, virtual_depth_working_directory);
+		//clearVWD(&virtual_working_directory, virtual_depth_working_directory);
 		return 1; // The root always exists.
 	} else {
 		if (path[0] == '/') { // If the path starts with the letter referring to the root
@@ -230,9 +233,14 @@ void copyWorkingDirectory(chainedDirectory **top)
 	for (i = 0; i < depth_working_directory - 1; i++) {
 		(*linked_directories + i) -> parent = (*linked_directories + i + 1);
 	}
-	(*linked_directories + i) -> parent = temp_CD_ptr;
-	*top = *linked_directories;
-	free(linked_directories);
+	printf("!%d!", i);
+	if (depth_working_directory == 0)
+		*top = temp_CD_ptr;
+	else {
+		(*linked_directories + i) -> parent = temp_CD_ptr;
+		*top = *linked_directories;
+		free(linked_directories);
+	}
 	/* We perfectly copied. */
 }
 void clearVWD(chainedDirectory **top, int cnt)

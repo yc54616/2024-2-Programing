@@ -192,6 +192,7 @@ int ExecuteCommand(char **command)
 int main(void)
 {
     // 선언들
+    working_directory = (chainedDirectory *) malloc(sizeof(chainedDirectory));
     working_directory -> my_name[0] = '\0';
     working_directory -> my_inode_number = 1;
     working_directory -> parent = working_directory;
