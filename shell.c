@@ -117,7 +117,7 @@ void Print_WD()
  @param 로직이 추가되면 수정하기
  @return void
  */
-    chainedDirectory virtual_working_directory = working_directory;
+    chainedDirectory *virtual_working_directory = working_directory;
     char (*linked_directories)[8];
     char c;
     int i;
@@ -125,9 +125,9 @@ void Print_WD()
     /* Coping real w.d into virtual w.d */
     linked_directories = (char (*)[8])malloc(sizeof(char (*)[8]) * depth_working_directory);
     for (i = 0; i < depth_working_directory; i++) {
-        strncpy(*(linked_directories + i), virtual_working_directory.my_name, 7);
+        strncpy(*(linked_directories + i), virtual_working_directory -> my_name, 7);
 	(*(linked_directories + i))[7] = '\0';
-        virtual_working_directory = *(virtual_working_directory.parent); // exploring
+        virtual_working_directory = virtual_working_directory -> parent; // exploring
     }
     /* Now, the array consists of directories in descending order.
      * ex)  /as/df/gh
@@ -192,9 +192,9 @@ int ExecuteCommand(char **command)
 int main(void)
 {
     // 선언들
-    working_directory.my_name[0] = '\0';
-    working_directory.my_inode_number = 1;
-    working_directory.parent = &working_directory;
+    working_directory -> my_name[0] = '\0';
+    working_directory -> my_inode_number = 1;
+    working_directory -> parent = working_directory;
     depth_working_directory = 0;
     int index = 0;
     bool execution_result; // 명령어 실행 성공 여부

@@ -1,5 +1,13 @@
 #ifndef __DATA_STRUCT_H__
 #	define __DATA_STRUCT_H__ 1
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h> // temporary
+
+#include "file_system.h"
+#include "io_stream.h"
+
 typedef struct chainedDirectory {
 	unsigned char my_name[7];
 	unsigned char my_inode_number;
@@ -17,4 +25,24 @@ struct FunctionCallByString
 	char name[30];
 	func command;
 };
+
+/* functions */
+
+int compare_directory_names(unsigned char *, unsigned char *);
+int getExistence(unsigned char *);
+/* To move the first-second parameter-what you want to move
+ * return value case
+ * 0 : failed to move ( such directory doesn't exist )
+ * 1 : successfully moved
+ */
+int _mycd(chainedDirectory **, int *, unsigned char *);
+void copyWorkingDirectory(chainedDirectory **);
+/* Used to free the stack */
+void clearVWD(chainedDirectory **, int);
+/* To move the first-second parameter-what you want to move
+ * return value case
+ * 0 : failed to move ( such directory doesn't exist )
+ * 1 : successfully moved
+ */
+int cd(chainedDirectory **, int *, unsigned char *);
 #endif
