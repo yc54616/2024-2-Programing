@@ -1,5 +1,5 @@
 #ifndef __IO_STREAM_H__
-#	define __IO_STREAM_H__
+#	define __IO_STREAM_H__ 1
 /* They get nothing, or number refers to the sector
  * read each sector what the programmer want from "myfs" file(more exactly from permanent memory)
  * return the object(structed memory)
