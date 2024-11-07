@@ -1,7 +1,7 @@
-#include <time.h>
-
 #ifndef __FILE_SYSTEM__
-#	define __FILE_SYSTEM__
+#	define __FILE_SYSTEM__ 1
+#	include <time.h>
+
 #	define FILENAME "myfs"
 	// ALL SIZES ARE CONSIDERED IN ITS UNIT
 #	define SIZE_BOOTBLOCK 2

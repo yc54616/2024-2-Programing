@@ -1,8 +1,12 @@
-#include "file_system.h"
+#ifndef __IO_STREAM_H__
+#	define __IO_STREAM_H__
+/* They get nothing, or number refers to the sector
+ * read each sector what the programmer want from "myfs" file(more exactly from permanent memory)
+ * return the object(structed memory)
+ */
+#	include <stdbool.h>
 
-#ifndef __IO_STREAM__
-#	define __IO_STREAM__
-#   include <stdbool.h>
+#	include "file_system.h"
 void setBit(Byte *byte, int index, bool bit);
 void initFilesystem();
 void setFilesystem(SuperBlock sb, InodeList in[SIZE_INODELIST], DataBlock db[SIZE_DATABLOCK]);
