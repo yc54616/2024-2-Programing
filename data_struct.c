@@ -240,7 +240,7 @@ void copyWorkingDirectory(chainedDirectory **top)
 	else {
 		(*(linked_directories + i)) -> parent = temp_CD_ptr;
 		*top = *linked_directories;
-		//free(linked_directories);
+		free(linked_directories);
 	}
 	/* We perfectly copied. */
 }
@@ -253,7 +253,7 @@ void clearVWD(chainedDirectory **top, int cnt)
 	for (i = 0; i < cnt; i++) {
 		temp_CD_ptr = (*top) -> parent;
 		printf("--%s,%d--\n", (*top) -> my_name, (*top) -> my_inode_number);
-		//free(*top);
+		free(*top);
 		*top = temp_CD_ptr;
 	}
 	free(*top); // free root
