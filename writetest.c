@@ -1,5 +1,6 @@
 #include "io_stream.h"
 #include <stdio.h>
+#include <string.h>
 
 // bootblock 2byte=16bit
 // superblock 128+256bit=48bit*8bit=48byte=384bit
@@ -31,19 +32,32 @@ int main()
 	int query;
     time(&curTime);
     unsigned char address[8] = {0,};
-    setInodeList(1, DIRECTORY, curTime, curTime, 8, 1, address, 0); // /
+    setInodeList(1, DIRECTORY, curTime, curTime, 16+8, 1, address, 0); // /
+    
+    unsigned char test[SIZE_DATABLOCK] = {0,};
+    test[0] = 'h', test[1] = 'e', test[2] = 'l', test[3] = '\0', test[7] = 2;
+    setDataBlock(0, test);
+    
+
     address[0] = 1;
-    setInodeList(2, DIRECTORY, curTime, curTime, 16, 1, address, 0); // /hel
+    setInodeList(2, DIRECTORY, curTime, curTime, 32, 1, address, 0); // /hel
+
+    memset(test, 0, sizeof(test));
+
+    test[0] = 'l', test[1] = 'o', test[2] = '\0', test[7] = 3;
+    test[8] = 'l', test[9] = 'o', test[10] = 'w', test[11] = 'o', test[12] = 'r', test[13] = 'l', test[14] = '\0', test[15] = 5;
+    setDataBlock(1, test);
+
+
+    memset(test, 0, sizeof(test));
+
     address[0] = 2;
     setInodeList(3, DIRECTORY, curTime, curTime, 8, 1, address, 0); // /hel/lo
     setInodeList(4, DIRECTORY, curTime, curTime, 0, 0, address, 0); // /hel/lo/world
     setInodeList(5, DIRECTORY, curTime, curTime, 0, 0, address, 0); // /hel/loworld
-    unsigned char test[SIZE_DATABLOCK] = {0,};
-    test[0] = 'h', test[1] = 'e', test[2] = 'l', test[3] = '\0', test[7] = 2;
-    setDataBlock(0, test);
-    test[0] = 'l', test[1] = 'o', test[2] = '\0', test[7] = 3;
-    test[8] = 'l', test[9] = 'o', test[10] = 'w', test[11] = 'o', test[12] = 'r', test[13] = 'l', test[14] = 'd', test[15] = 5;
-    setDataBlock(1, test);
+
+    memset(test, 0, sizeof(test));
+
     test[0] = 'w', test[1] = 'o', test[2] = 'r', test[3] = 'l', test[4] = 'd', test[5] = '\0', test[7] = 4;
     setDataBlock(2, test);
 

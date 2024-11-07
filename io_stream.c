@@ -3,6 +3,24 @@
 
 #include "io_stream.h"
 
+// name : 디렉토리 이름
+// dataBlockIndex : 이 데이터블럭 인덱스에 있는 디렉토리들
+// inodeIndex : 지금 설정되는 디렉토리가 가리킬 inode 인덱스
+// startPos : 디렉토리 이름을 저장할 시작 인덱스
+void writeDirectoryDataBlock(char name[], int dataBlockIndex, int inodeIndex, int startPos){
+	DataBlock dBlock = getDataBlock(dataBlockIndex);
+	//unsigned char test[SIZE_DATABLOCK] = dBlock.contents[SIZE_DATABLOCK];
+	int i;
+	for(i = 0; name[i] != '\0'; i++){
+		dBlock.contents[i+startPos] = name[i];
+	}
+	for(;i < 7; i++){
+		dBlock.contents[i+startPos] = 0;
+	}
+	dBlock.contents[startPos+7] = inodeIndex;
+	setDataBlock(dataBlockIndex, dBlock.contents);
+}
+
 void setBit(Byte *byte, int index, bool bit)
 {
 	switch (index)

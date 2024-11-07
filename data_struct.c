@@ -163,7 +163,8 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 			return -1; // There is no such directory.
 		} else { // It uses direct pointer(s)
 			for (i = 0; i < inode_list.reference_count - 1; i++) {
-				data_block = getDataBlock(inode_list.direct_address[i]);
+				data_block = getDataBlock(inode_list.direct_address[i]);				
+				printf("%s", data_block.contents);
 				for (j = 0; j < 32; j++) {
 					if (compare_directory_names(data_block.subfiles[j], directory_name)) {
 						if (getInodeList(data_block.subfiles[j][7]).file_mode == DIRECTORY) {
