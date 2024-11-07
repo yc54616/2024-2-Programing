@@ -233,12 +233,12 @@ void copyWorkingDirectory(chainedDirectory **top)
 	temp_CD_ptr -> my_inode_number = 1;
 	temp_CD_ptr -> parent = temp_CD_ptr;
 	for (i = 0; i < depth_working_directory - 1; i++) {
-		(*linked_directories + i) -> parent = (*linked_directories + i + 1);
+		*(linked_directories + i) -> parent = *(linked_directories + i + 1);
 	}
 	if (depth_working_directory == 0)
 		*top = temp_CD_ptr;
 	else {
-		(*linked_directories + i) -> parent = temp_CD_ptr;
+		*(linked_directories + i) -> parent = temp_CD_ptr;
 		*top = *linked_directories;
 		//free(linked_directories);
 	}
