@@ -51,7 +51,7 @@ void mycd(char **commands)
 	if (cd(&working_directory, &depth_working_directory, path) == 0) { // If failed cd,
 		printf("Such directory doesn't exist\n");
 	}
-	free(path);
+	//free(path);
 }
 
 void mytree(char **commands)
