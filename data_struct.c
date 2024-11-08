@@ -1,13 +1,18 @@
 /* This file treats
- * 1. working_directory stack
+ * 1. working_directory stack and its virtual version
  * 2. the function for directory
  */
 #include "data_struct.h"
 
-/* declarations of global variable */
-extern chainedDirectory *working_directory;
-extern int depth_working_directory;
+/* definition of global variable */
+chainedDirectory *working_directory;
+int depth_working_directory;
 
+/* It has quite simple logic, is similar as strcmp, but we need this because
+ * If directory name length is 7, then strcmp can't think that where it ends since '\0' doesn't exist in 7 digits array.
+ * Therefore we need some special function like that below.
+ * Especially, it needs to check for the situation when the length of name of directory is 7.
+ */
 int compare_directory_names(unsigned char *dir1, unsigned char *dir2)
 {
 	int i;
@@ -18,7 +23,7 @@ int compare_directory_names(unsigned char *dir1, unsigned char *dir2)
 		c2 = *(dir2 + i);
 		if (c1 != c2)
 			return 0;
-		else if (c1 == '\0')
+		else if (c1 == '\0') // Already checked that c1 == c2.
 			break;
 	}
 	return 1;
@@ -33,6 +38,7 @@ int compare_directory_names(unsigned char *dir1, unsigned char *dir2)
  * Before it, we saw all posibillities. 
  */
 
+/* This function is used for checking the existence of directory exactly in the path from working directory.*/
 int getExistence(unsigned char *path)
 {
 	int i;
@@ -45,7 +51,7 @@ int getExistence(unsigned char *path)
 	char c;
 
 	/* Coping real w.d into virtual w.d */
-	copyWorkingDirectory(&virtual_working_directory); // We must free them.
+	copyWorkingDirectory(&virtual_working_directory); // We must free them. => using clearVWD before returning(function ending)
 	virtual_depth_working_directory = depth_working_directory;
 
 
@@ -71,10 +77,11 @@ int getExistence(unsigned char *path)
 			if (i == 7) {
 				c = path[written_characters];
 				written_characters++;
-				if (c != '\0' && c != '/')
+				if (c != '\0' && c != '/') { // the path ends neither '\0' nor '/' means user typed directory of which length is more than max length.
 					clearVWD(&virtual_working_directory, virtual_depth_working_directory);
 					return 0;
 					// The length of the directory name field exceeds
+				}
 			}
 			directory_name[i] = '\0';
 			/* Actually changing directory */
@@ -82,33 +89,29 @@ int getExistence(unsigned char *path)
 				clearVWD(&virtual_working_directory, virtual_depth_working_directory);
 				return 0;
 			}
-			printf("!%s,%d!\n", virtual_working_directory -> my_name, virtual_working_directory -> my_inode_number);
 		} while (c != '\0');
-		printf("??");
 	}
 	clearVWD(&virtual_working_directory, virtual_depth_working_directory);
 	return 1;
 }
 
+/* Actually changing the directory, either real working directory or virtual */
 int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 {
-	printf("in _mycd : %s\n", directory_name);
 	chainedDirectory *temp_CD_ptr;
 	InodeList inode_list;
 	DataBlock data_block;
 	DataBlock indirect_block;
 	int i, j;
-	unsigned int remaining_space;
-	unsigned char number_of_using_pointer;
+	unsigned int remaining_space; // It's used for for-loop that treats the left space without fully using data block
+	unsigned char number_of_using_pointer; // If the directory use indirect pointer then, it has the number of using direct pointers in indirect block.
 
 	if (compare_directory_names("..", directory_name)) { // if the parameter is ".."
 		/* Predicting the problem when cd from root to .. */
-		printf("sibal");
 		if (*cnt != 0) {
-			temp_CD_ptr = *top;
-			*top = (*top) -> parent;
-			printf("@%s@", (*top) -> my_name);
-			free(temp_CD_ptr);
+			temp_CD_ptr = *top; // Temporarilly saving for freeing dynamically allocated memory.
+			*top = (*top) -> parent; // Moving to parent ex) /a/b/c to /a/b
+			free(temp_CD_ptr); // The programmer's duty.
 			(*cnt)--;
 		}
 		return 0;
@@ -121,12 +124,13 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 		if (inode_list.reference_count == 9) { // If it uses a single indirect pointer
 			indirect_block = getDataBlock(inode_list.single_indirect_address);
 			number_of_using_pointer = indirect_block.contents[0];
+			/* looping in the indirect block */
 			for (i = 1; i < number_of_using_pointer; i++) {
 				data_block = getDataBlock(indirect_block.contents[i]);
+				/* looping in the data block */
 				for (j = 0; j < 32; j++) {
-					if (compare_directory_names(data_block.subfiles[j], directory_name)) {
-						if (getInodeList(data_block.subfiles[j][7]).file_mode == DIRECTORY) {
-							printf("DEBUG 4\n");
+					if (compare_directory_names(data_block.subfiles[j], directory_name)) { // Found the file ( directory of general )
+						if (getInodeList(data_block.subfiles[j][7]).file_mode == DIRECTORY) { // It was a directory
 							temp_CD_ptr = (chainedDirectory *)malloc(sizeof(chainedDirectory));
 							strncpy(temp_CD_ptr -> my_name, directory_name, 7);
 							temp_CD_ptr -> my_inode_number = data_block.subfiles[j][7]; // 8th member of the array.
@@ -142,11 +146,11 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 			}
 			/* Processing the one remaining data block, which generally does not take up the entire space */
 			data_block = getDataBlock(indirect_block.contents[i]);
-			remaining_space = inode_list.size % sizeof(DataBlock);
-			for (j = 0; j < remaining_space / 8; j++) {
+			remaining_space = inode_list.size / 8;
+			/* looping in the data block */
+			for (j = 0; j < remaining_space; j++) {
 				if (compare_directory_names(data_block.subfiles[j], directory_name)) {
 					if (getInodeList(data_block.subfiles[j][7]).file_mode == DIRECTORY) {
-						printf("DEBUG 1\n");
 						temp_CD_ptr = (chainedDirectory *)malloc(sizeof(chainedDirectory));
 						strncpy(temp_CD_ptr -> my_name, directory_name, 7);
 						temp_CD_ptr -> my_inode_number = data_block.subfiles[j][7]; // 8th member of the array.
@@ -162,12 +166,13 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 				
 			return -1; // There is no such directory.
 		} else { // It uses direct pointer(s)
+			/* looping in the direct pointers */
 			for (i = 0; i < inode_list.reference_count - 1; i++) {
 				data_block = getDataBlock(inode_list.direct_address[i]);
+				/* looping in the data block */
 				for (j = 0; j < 32; j++) {
-					if (compare_directory_names(data_block.subfiles[j], directory_name)) {
-						if (getInodeList(data_block.subfiles[j][7]).file_mode == DIRECTORY) {
-							printf("DEBUG 2\n");
+					if (compare_directory_names(data_block.subfiles[j], directory_name)) { // Found the file ( directory of general )
+						if (getInodeList(data_block.subfiles[j][7]).file_mode == DIRECTORY) { // It was a directory
 							temp_CD_ptr = (chainedDirectory *)malloc(sizeof(chainedDirectory));
 							strncpy(temp_CD_ptr -> my_name, directory_name, 7);
 							temp_CD_ptr -> my_inode_number = data_block.subfiles[j][7]; // 8th member of the array.
@@ -183,11 +188,11 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 			}
 			/* Processing the one remaining data block, which generally does not take up the entire space */
 			data_block = getDataBlock(inode_list.direct_address[i]);
-			remaining_space = inode_list.size % sizeof(DataBlock);
-			for (j = 0; j < remaining_space / 8; j++) {
-				if (compare_directory_names(data_block.subfiles[j], directory_name)) {
-					if (getInodeList(data_block.subfiles[j][7]).file_mode == DIRECTORY) {
-						printf("DEBUG 3\n");
+			remaining_space = inode_list.size / 8;
+			/* looping in the data block*/
+			for (j = 0; j < remaining_space; j++) {
+				if (compare_directory_names(data_block.subfiles[j], directory_name)) { // Found the file ( directory of general )
+					if (getInodeList(data_block.subfiles[j][7]).file_mode == DIRECTORY) { // It was a directory
 						temp_CD_ptr = (chainedDirectory *)malloc(sizeof(chainedDirectory));
 						strncpy(temp_CD_ptr -> my_name, directory_name, 7);
 						temp_CD_ptr -> my_inode_number = data_block.subfiles[j][7]; // 8th member of the array.
@@ -195,7 +200,6 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 							
 						*top = temp_CD_ptr;
 						(*cnt)++;
-						printf("-%d-\n", (*top) -> parent -> my_inode_number);
 						return 0;
 					} else // This is not a directory
 						return -1;
@@ -205,12 +209,13 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 		}
 	}
 }
+/* will use when we need to copy working directory */
 void copyWorkingDirectory(chainedDirectory **top)
 {
 	int i;
 	chainedDirectory *temp_CD_ptr;
-	chainedDirectory *virtual_working_directory = working_directory;
-	chainedDirectory **linked_directories = (chainedDirectory **) malloc(sizeof(chainedDirectory *) * depth_working_directory);
+	chainedDirectory *virtual_working_directory = working_directory; // It's not the copied.
+	chainedDirectory **linked_directories = (chainedDirectory **) malloc(sizeof(chainedDirectory *) * depth_working_directory); // More detailed notion is described in the PDF, read it.
 	
 	for (i = 0; i < depth_working_directory; i++) {
 		temp_CD_ptr = (chainedDirectory *) malloc(sizeof(chainedDirectory));
@@ -232,6 +237,7 @@ void copyWorkingDirectory(chainedDirectory **top)
 	(temp_CD_ptr -> my_name)[0] = '\0';
 	temp_CD_ptr -> my_inode_number = 1;
 	temp_CD_ptr -> parent = temp_CD_ptr;
+
 	for (i = 0; i < depth_working_directory - 1; i++) {
 		(*(linked_directories + i)) -> parent = *(linked_directories + i + 1);
 	}
@@ -244,19 +250,18 @@ void copyWorkingDirectory(chainedDirectory **top)
 	}
 	/* We perfectly copied. */
 }
+/* free- */
 void clearVWD(chainedDirectory **top, int cnt)
 {
 	int i;
 	chainedDirectory *temp_CD_ptr;
-	printf("$$%d$$", cnt);
 
 	for (i = 0; i < cnt; i++) {
 		temp_CD_ptr = (*top) -> parent;
-		printf("--%s,%d--\n", (*top) -> my_name, (*top) -> my_inode_number);
 		free(*top);
 		*top = temp_CD_ptr;
 	}
-	free(*top); // free root
+	free(*top); // frees the root
 }
 
 int cd(chainedDirectory **top, int *cnt, unsigned char *path)
@@ -266,16 +271,14 @@ int cd(chainedDirectory **top, int *cnt, unsigned char *path)
 	char directory_name[7];
 	char c;
 	/* We have to use the variable below, since
-	 * If user type the 
+	 * the path can have nothing
 	 */
-	printf("path : %s!\n", path);
 	if (path == NULL) { // '$ mycd' => go to the root
 		while (*cnt != 0) {
 			_mycd(top, cnt, "..");
 		}
 		written_characters++; // Counting for '/'
-	} else if (getExistence(path) && printf("1")) {
-		printf("path : %s\n", path);
+	} else if (getExistence(path)) {
 			
 		if (path[0] == '/') { // If the path starts with the letter referring to the root
 			while (*cnt != 0)

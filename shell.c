@@ -26,8 +26,8 @@ commands[2].command("a bc")
 #include "shell.h"
 
 /* definitions of global variable */
-chainedDirectory *working_directory; // It makes a stack.
-int depth_working_directory = 0; // It refers to the depth which is the number how many directories are there to reach here from '/'
+extern chainedDirectory *working_directory; // It makes a stack.
+extern int depth_working_directory; // It refers to the depth which is the number how many directories are there to reach here from '/'
 /* example
  * /home/yhj/advanced_programming/project => 4
  * / => 0
