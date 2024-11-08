@@ -97,7 +97,8 @@ struct FunctionCallByString g_command_list[500] =
 	commandIntoFunction(mypwd),
 	commandIntoFunction(mycd),
 	commandIntoFunction(mytree),
-    commandIntoFunction(myls)
+    commandIntoFunction(myls),
+    commandIntoFunction(mymkdir)
     };
 
 // funcions for shell system
