@@ -57,4 +57,6 @@ void mycd(char **commands)
 void mytree(char **commands)
 {
 
+
 }
+static void _Tree(unsigned char *name, unsigned char inode_number, int depth, int last_file
