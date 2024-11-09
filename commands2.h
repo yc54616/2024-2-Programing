@@ -9,6 +9,8 @@
 #	include "io_stream.h"
 
 /* functions */
+void mymkdir(char **commands);
+void myls(char **commands);
 void mypwd(char **commands);
 void mycd(char **commands);
 void mytree(char **commands);
