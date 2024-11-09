@@ -84,23 +84,6 @@ void clear(char **command)
     return;
 }
 
-// commands list
-struct FunctionCallByString g_command_list[500] =
-    {
-        commandIntoFunction(print1),
-        commandIntoFunction(echo),
-        commandIntoFunction(clear),
-        commandIntoFunction(command),
-    	commandIntoFunction(myinode),
-    	commandIntoFunction(mydatablock),
-    	commandIntoFunction(mystatus),
-	commandIntoFunction(mypwd),
-	commandIntoFunction(mycd),
-	commandIntoFunction(mytree),
-    commandIntoFunction(myls),
-    commandIntoFunction(mymkdir)
-    };
-
 // funcions for shell system
 // main에서 실행되는 순으로 정렬하였다
 void Print_ID(char *computerId, char *userId)
