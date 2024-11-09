@@ -22,7 +22,15 @@ struct FunctionCallByString g_command_list[500] =
         commandIntoFunction(print1),
         commandIntoFunction(echo),
         commandIntoFunction(clear),
-        commandIntoFunction(command)};
+        commandIntoFunction(myinode),
+        commandIntoFunction(mydatablock),
+        commandIntoFunction(mystatus),
+        commandIntoFunction(mypwd),
+        commandIntoFunction(mycd),
+        commandIntoFunction(mytree),
+        commandIntoFunction(mymkdir),
+        commandIntoFunction(myls),
+    };
 void Print_ID(char *computerId, char *userId);
 void Print_WD();
 void GetInput(char **inputString);
