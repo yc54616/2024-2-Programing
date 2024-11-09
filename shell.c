@@ -23,25 +23,15 @@ struct functionCall은 함수 이름(문자열)과 함수 이름(함수 호출)�
 commands[2].command("a bc")
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#define string(a) #a
-#define commandIntoFunction(commandName) {#commandName, commandName} // struct g_command_list 만들기 용이하게 하기 위해 선언
+#include "shell.h"
 
-typedef void (*func)(char **); // 함수 호출을 용이하게 하기 위해 선언: param이 필요한 것들은 추가로 typedef하기
-
-struct FunctionCallByString
-{
-    /**
-    @brief 함수 호출을 입력받은 문자열을 통해 하기 위해 사용한다.
-    name은 명령어(함수)의 이름(문자열), command는 명령어(함수) 호출이다.
-    name == #command
-    */
-    char name[30];
-    func command;
-};
+/* definitions of global variable */
+extern chainedDirectory *working_directory; // It makes a stack.
+extern int depth_working_directory; // It refers to the depth which is the number how many directories are there to reach here from '/'
+/* example
+ * /home/yhj/advanced_programming/project => 4
+ * / => 0
+ */
 
 // commands
 void print1(char **command) // 테스트용 함수
@@ -100,7 +90,16 @@ struct FunctionCallByString g_command_list[500] =
         commandIntoFunction(print1),
         commandIntoFunction(echo),
         commandIntoFunction(clear),
-        commandIntoFunction(command)};
+        commandIntoFunction(command),
+    	commandIntoFunction(myinode),
+    	commandIntoFunction(mydatablock),
+    	commandIntoFunction(mystatus),
+	commandIntoFunction(mypwd),
+	commandIntoFunction(mycd),
+	commandIntoFunction(mytree),
+    commandIntoFunction(myls),
+    commandIntoFunction(mymkdir)
+    };
 
 // funcions for shell system
 // main에서 실행되는 순으로 정렬하였다
@@ -113,14 +112,37 @@ void Print_ID(char *computerId, char *userId)
      */
     printf("%s@%s:", computerId, userId);
 }
-void Print_WD(char *wd)
+void Print_WD()
 {
     /**
  @brief WorkingDirectory출력; 로직이 추가되면 수정하기
  @param 로직이 추가되면 수정하기
  @return void
  */
-    printf("%s$ ", wd);
+    chainedDirectory *virtual_working_directory = working_directory;
+    char (*linked_directories)[8];
+    char c;
+    int i;
+    
+    /* Coping real w.d into virtual w.d */
+    linked_directories = (char (*)[8])malloc(sizeof(char (*)[8]) * depth_working_directory);
+    for (i = 0; i < depth_working_directory; i++) {
+        strncpy(*(linked_directories + i), virtual_working_directory -> my_name, 7);
+	(*(linked_directories + i))[7] = '\0';
+        virtual_working_directory = virtual_working_directory -> parent; // exploring
+    }
+    /* Now, the array consists of directories in descending order.
+     * ex)  /as/df/gh
+     *    => gh df as
+     * index  0  1  2
+     * So, we need to read this from backward.
+     */
+    for (i = depth_working_directory - 1; i >= 0; i--)
+	    printf("/%s", *(linked_directories + i));
+    if (depth_working_directory == 0)
+	    printf("/");
+    printf(" ");
+    free(linked_directories);
 }
 
 void GetInput(char **inputString)
@@ -172,18 +194,26 @@ int ExecuteCommand(char **command)
 int main(void)
 {
     // 선언들
+    working_directory = (chainedDirectory *) malloc(sizeof(chainedDirectory));
+    working_directory -> my_name[0] = '\0';
+    working_directory -> my_inode_number = 1;
+    working_directory -> parent = working_directory;
+    depth_working_directory = 0;
     int index = 0;
     bool execution_result; // 명령어 실행 성공 여부
     char *inputString;
     char *command[500];                              // 배열의 한 칸이 char*으로, 하나의 단어를 지칭
-    char *root_directory = "/";                      // root directory
     char *computer_id = "red", *user_id = "redmint"; // 컴퓨터 및 사용자 ID
 
     // 실행코드
     while (1)
     { // {1.ID및 WD출력   2.command 입력받기 실행하기} 반복
-        Print_ID(computer_id, user_id);
-        Print_WD(root_directory);
+	/* 정상화 */
+	printf("[");
+        //Print_ID(computer_id, user_id);
+        Print_WD();
+	/* 의 신 */
+	printf("]$ ");
 
         GetInput(&inputString);
         if (inputString[0] == '\0') // 입력값이 없을 경우 continue;
@@ -201,6 +231,7 @@ int main(void)
             printf("Command \"%s\" not found\n", command[0]);
             continue;
         }
+	printf("\n");
     }
 }
 // shell

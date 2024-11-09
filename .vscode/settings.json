@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "*.embeddedhtml": "html",
+        "data_struct.h": "c",
+        "string.h": "c",
+        "commands2.h": "c",
+        "stdio.h": "c",
+        "stdlib.h": "c",
+        "io_stream.h": "c",
+        "file_system.h": "c",
+        "stdbool.h": "c",
+        "time.h": "c"
+    }
+}
