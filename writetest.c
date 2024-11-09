@@ -12,9 +12,9 @@ int main()
 {
     initFilesystem();
     
-    for(int i = 1; i <= 384; i++){
-        setSuperBlock(i, 0);
-    }
+    // for(int i = 1; i <= 384; i++){
+    //     setSuperBlock(i, 0);
+    // }
     setSuperBlock(1, 1);
     setSuperBlock(2, 1);
     setSuperBlock(3, 1);
@@ -23,14 +23,14 @@ int main()
     setSuperBlock(6, 1);
     setSuperBlock(7, 1);
     setSuperBlock(SIZE_INODELIST + 1, 1);
-    setSuperBlock(SIZE_INODELIST + 2, 1);
-    setSuperBlock(SIZE_INODELIST + 3, 1);
+    // setSuperBlock(SIZE_INODELIST + 2, 1);
+    // setSuperBlock(SIZE_INODELIST + 3, 1);
 
     time_t curTime;
         
-    InodeList il;
-    int i, j;
-	int query;
+    // InodeList il;
+    // int i, j;
+	// int query;
     time(&curTime);
     unsigned char address[8] = {0,};
     setInodeList(1, DIRECTORY, curTime, curTime, 16, 1, address, 0); // /

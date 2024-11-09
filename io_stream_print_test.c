@@ -39,17 +39,15 @@ int main(int argc, char *argv[])
 	}
 	printf("\n");
 	while (1) {
-		printf("query for InodeList : ");
+		printf("query for th? : ");
 		scanf("%d", &query);
 		if (query >= 1 && query <= SIZE_INODELIST) {
+			printf("inode : \n");
 			inode_list = getInodeList(query); // it starts at 1.
 			printInodeList(inode_list);
-		}
-		printf("\n");
-		printf("query for DataBlock : ");
-		scanf("%d", &query);
-		if (query >= 0 && query <= SIZE_DATABLOCK - 1) { // since it starts at 0.
-			data_block = getDataBlock(query);
+			printf("\n");
+			printf("datablock : \n");
+			data_block = getDataBlock(query-1);
 			printDataBlock(data_block);
 		}
 		printf("\n");
@@ -60,18 +58,24 @@ void printInodeList(InodeList inode_list)
 {
 	int i;
 
-	printf("type and direct or indirect : %d\n", inode_list.type_and_direct_or_indirect.for_shift); // it wasn't used for shift ..
-	printf("date : %ld\n", inode_list.date); // temporary
+	printf("type and direct or indirect : %d\n", inode_list.file_mode); // it wasn't used for shift ..
+	printf("date : %ld\n", inode_list.birth_date); // temporary
 	printf("size : %u\n", inode_list.size);
 	printf("directs : ");
 	for (i = 0; i < 8; i++)
-		printf("%d ", inode_list.direct[i]);
+		printf("%d ", inode_list.direct_address[i]);
 	printf("\n");
 }
 void printDataBlock(DataBlock data_block)
 {
 	int i;
 
-	for (i = 0; i < sizeof(DataBlock); i++)
-		printf("%c", data_block.contents[i]);
+	for (i = 0; i < sizeof(DataBlock); i++){
+		if(data_block.contents[i] == '\0')
+			printf(" ");
+		else if('a' <= data_block.contents[i] && data_block.contents[i] <= 'z')
+			printf("%c", data_block.contents[i]);
+		else
+			printf("%d", data_block.contents[i]);
+	}
 }
