@@ -24,12 +24,16 @@ void mymkdir(char **commands)
 		return;
 	}
 
+	printf("workding d : %d\n", working_directory->my_inode_number);
+
 	unsigned char *names = calloc(sizeof(unsigned char), 8);
 	strcpy(names, argument);
-	printf(">> %s", names);
+	printf(">> %s\n", names);
 
 	int useInode = findEmptyInode();
 	int useDataBlock = findEmptyDataBlock();
+
+	printf(">> useInode : %d, useDataBlock %d\n", useInode, useDataBlock);
 
 	names[7] = useInode;
 
@@ -41,6 +45,11 @@ void mymkdir(char **commands)
 	setSuperBlock(SIZE_INODELIST+useInode, 1);
 	unsigned char address[8] = {useDataBlock,};
 	setInodeList(useInode, DIRECTORY, curTime, curTime, 8 * 2, 1, address, 0);
+
+	// unsigned char test[SIZE_DATABLOCK] = {0,};
+	// test[0] = 'h', test[1] = 'e', test[2] = 'l', test[3] = '\0', test[7] = 2;
+    // test[8] = 'I', test[9] = '-', test[10] = 'p', test[11] = 'h', test[12] = 'o', test[13] = 'n', test[14] = 'e', test[15] = 7;
+    // setDataBlock(0, test);
 
 	writeDirectoryDataBlock(names, working_directory->my_inode_number-1, curDictory.size-16);
 	setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, curDictory.birth_date, curDictory.size+8, curDictory.reference_count, curDictory.direct_address, curDictory.single_indirect_address);
@@ -89,7 +98,7 @@ void myls(char **commands)
 		printf("%d byte  ", inode.size);
 		for (int j = i * 8; j < i * 8 + 7; j++)
 		{
-			printf("%c", data_block.contents[j]);
+			printf("%c", *(data_block.contents+j));
 		}
 		printf("\n");
 	}
