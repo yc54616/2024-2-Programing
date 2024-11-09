@@ -9,6 +9,7 @@
 #	include "io_stream.h"
 
 /* functions */
+void mytouch(char **commands);
 void mymkdir(char **commands);
 void myls(char **commands);
 void mypwd(char **commands);

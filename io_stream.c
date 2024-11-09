@@ -3,11 +3,6 @@
 
 #include "io_stream.h"
 
-// 문자열 패딩 \x00
-void padding(){
-
-}
-
 // 0인 비어있는 inode superblock 찾기 
 unsigned char findEmptyInode(){
 	SuperBlock superblock = getSuperBlock();

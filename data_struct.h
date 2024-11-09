@@ -27,7 +27,7 @@ struct FunctionCallByString
 };
 
 /* functions */
-
+unsigned char findDictoryNameToInode(char * argument);
 int compare_directory_names(unsigned char *, unsigned char *);
 int getExistence(unsigned char *);
 /* To move the first-second parameter-what you want to move

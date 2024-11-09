@@ -7,7 +7,6 @@
 #	include <stdbool.h>
 
 #	include "file_system.h"
-unsigned char findEmptySuperBlock();
 unsigned char findEmptyInode();
 unsigned char findEmptyDataBlock();
 void writeDirectoryDataBlock(char name[], int datablockIndex, int startIndex);

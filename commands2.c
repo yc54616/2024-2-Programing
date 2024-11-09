@@ -11,6 +11,20 @@ extern int depth_working_directory;
 /* It seems like _mycd */
 static void _Tree(unsigned char *, unsigned char, int, char *, int);
 
+void mytouch(char **commands){
+	if(commands[1] == NULL){
+		printf("Params Empty..");
+		return;
+	}
+	char *argument = commands[1];
+	char str[8];
+	strcpy(str,argument);
+	if(findDictoryNameToInode(str) != 0){
+		printf("FIND!!\n");
+		printf("%d\n",findDictoryNameToInode(str));
+	};
+}
+
 void mymkdir(char **commands)
 {
 	if(commands[1] == NULL){
@@ -30,6 +44,12 @@ void mymkdir(char **commands)
 	strcpy(names, argument);
 	printf(">> %s\n", names);
 
+	if(getExistence(names)){
+		printf("Existence directory..\n");
+		free(names);
+		return;
+	}
+
 	int useInode = findEmptyInode();
 	int useDataBlock = findEmptyDataBlock();
 
@@ -45,11 +65,6 @@ void mymkdir(char **commands)
 	setSuperBlock(SIZE_INODELIST+useInode, 1);
 	unsigned char address[8] = {useDataBlock,};
 	setInodeList(useInode, DIRECTORY, curTime, curTime, 8 * 2, 1, address, 0);
-
-	// unsigned char test[SIZE_DATABLOCK] = {0,};
-	// test[0] = 'h', test[1] = 'e', test[2] = 'l', test[3] = '\0', test[7] = 2;
-    // test[8] = 'I', test[9] = '-', test[10] = 'p', test[11] = 'h', test[12] = 'o', test[13] = 'n', test[14] = 'e', test[15] = 7;
-    // setDataBlock(0, test);
 
 	writeDirectoryDataBlock(names, working_directory->my_inode_number-1, curDictory.size-16);
 	setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, curDictory.birth_date, curDictory.size+8, curDictory.reference_count, curDictory.direct_address, curDictory.single_indirect_address);
