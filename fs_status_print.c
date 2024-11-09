@@ -8,6 +8,11 @@ void myinode(char **commands)
 	int i;
 	int direct_pointer_count;
 	
+	if (commands[1] == NULL) {
+		errmsg("The first argument must be filled!\n");
+		return;
+	}
+
 	for (i = 0; (c = commands[1][i]) != '\0'; i++) {
 		if (c < '0' || c > '9') {
 			errmsg("The first arg must be positive integer format!\n");
@@ -42,6 +47,11 @@ void mydatablock(char **commands) {
 	char c;
 	int i;
 	
+	if (commands[1] == NULL) {
+		errmsg("The first argument must be filled!\n");
+		return;
+	}
+
 	for (i = 0; (c = commands[1][i]) != '\0'; i++) {
 		if (c < '0' || c > '9') {
 			errmsg("The first arg must be positive integer format!\n");

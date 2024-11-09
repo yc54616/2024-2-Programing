@@ -104,7 +104,7 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 	DataBlock indirect_block;
 	int i, j;
 	unsigned int remaining_space; // It's used for for-loop that treats the left space without fully using data block
-	unsigned char number_of_using_pointer; // If the directory use indirect pointer then, it has the number of using direct pointers in indirect block.
+	unsigned char number_of_using_pointers; // If the directory use indirect pointer then, it has the number of using direct pointers in indirect block.
 
 	if (compare_directory_names("..", directory_name)) { // if the parameter is ".."
 		/* Predicting the problem when cd from root to .. */
@@ -123,9 +123,9 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 		inode_list = getInodeList((*top) -> my_inode_number);
 		if (inode_list.reference_count == 9) { // If it uses a single indirect pointer
 			indirect_block = getDataBlock(inode_list.single_indirect_address);
-			number_of_using_pointer = indirect_block.contents[0];
+			number_of_using_pointers = indirect_block.contents[0];
 			/* looping in the indirect block */
-			for (i = 1; i < number_of_using_pointer; i++) {
+			for (i = 1; i < number_of_using_pointers - 1; i++) {
 				data_block = getDataBlock(indirect_block.contents[i]);
 				/* looping in the data block */
 				for (j = 0; j < 32; j++) {
@@ -146,7 +146,7 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 			}
 			/* Processing the one remaining data block, which generally does not take up the entire space */
 			data_block = getDataBlock(indirect_block.contents[i]);
-			remaining_space = inode_list.size / 8;
+			remaining_space = inode_list.size % sizeof(DataBlock) / 8;
 			/* looping in the data block */
 			for (j = 0; j < remaining_space; j++) {
 				if (compare_directory_names(data_block.subfiles[j], directory_name)) {
@@ -188,7 +188,7 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 			}
 			/* Processing the one remaining data block, which generally does not take up the entire space */
 			data_block = getDataBlock(inode_list.direct_address[i]);
-			remaining_space = inode_list.size / 8;
+			remaining_space = inode_list.size % sizeof(DataBlock) / 8;
 			/* looping in the data block*/
 			for (j = 0; j < remaining_space; j++) {
 				if (compare_directory_names(data_block.subfiles[j], directory_name)) { // Found the file ( directory of general )
