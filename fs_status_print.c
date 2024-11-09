@@ -1,6 +1,6 @@
 #include "fs_status_print.h"
 
-void myinode(char **command)
+void myinode(char **commands)
 {
 	int inode_number;
 	InodeList inode_list;
@@ -8,7 +8,12 @@ void myinode(char **command)
 	int i;
 	int direct_pointer_count;
 	
-	for (i = 0; (c = command[1][i]) != '\0'; i++) {
+	if (commands[1] == NULL) {
+		errmsg("The first argument must be filled!\n");
+		return;
+	}
+
+	for (i = 0; (c = commands[1][i]) != '\0'; i++) {
 		if (c < '0' || c > '9') {
 			errmsg("The first arg must be positive integer format!\n");
 			return;
@@ -20,7 +25,7 @@ void myinode(char **command)
 		return;
 	}
 
-	inode_number = strtol(command[1], NULL, 10);
+	inode_number = strtol(commands[1], NULL, 10);
 	if (! (inode_number >= 1 && inode_number <= SIZE_INODELIST)) {
 		errmsg("The first arg must be in the (closed) section-[1, %d]!\n", SIZE_INODELIST);
 		return;
@@ -36,13 +41,18 @@ void myinode(char **command)
 		printf("  #%d 직접 데이터 블록 : %d\n", i, inode_list.direct_address[i]);
 	printf("간접 블록 번호 : %d\n", inode_list.single_indirect_address);
 }
-void mydatablock(char **command) {
+void mydatablock(char **commands) {
 	int block_address;
 	DataBlock data_block;
 	char c;
 	int i;
 	
-	for (i = 0; (c = command[1][i]) != '\0'; i++) {
+	if (commands[1] == NULL) {
+		errmsg("The first argument must be filled!\n");
+		return;
+	}
+
+	for (i = 0; (c = commands[1][i]) != '\0'; i++) {
 		if (c < '0' || c > '9') {
 			errmsg("The first arg must be positive integer format!\n");
 			return;
@@ -54,7 +64,7 @@ void mydatablock(char **command) {
 		return;
 	}
 
-	block_address = strtol(command[1], NULL, 10);
+	block_address = strtol(commands[1], NULL, 10);
 	if (! (block_address >= 0 && block_address <= SIZE_DATABLOCK - 1)) {
 		errmsg("The first arg must be in the (closed) section-[0, %d]!\n", SIZE_DATABLOCK - 1);
 		return;
@@ -65,7 +75,7 @@ void mydatablock(char **command) {
 		printf("%c", data_block.contents[i]);
 	printf("\n");
 }
-void mystatus(char **command) {
+void mystatus(char **commands) {
 	SuperBlock super_block;
 	int i, j, k;
 	int index;
