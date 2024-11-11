@@ -179,7 +179,7 @@ void setInodeList(int index, bool file_mode, time_t access_date, time_t birth_da
 	else
 		in.single_indirect_address = single_indirect_address;
 
-	fseek(file, 32 * (index - 1), SEEK_CUR);
+	fseek(file, sizeof(InodeList) * (index - 1), SEEK_CUR);
 	fwrite(&in, sizeof(in), 1, file);
 
 	fclose(file);
