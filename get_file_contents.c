@@ -1,10 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <stdbool.h>
-#include <string.h>
-#include "file_system.h"
-#include "io_stream.h"
+#include "header.h"
 
 
 char* getFileContentsWithSourceFileName(char* source_file) { //source_file이 DataBlock의 contents 멤버 안에 존재하면 해당 파일의 InodeList의 directs 멤버에 해당하는 모든 contents 내용 return, 예외 발생 시 error return 
