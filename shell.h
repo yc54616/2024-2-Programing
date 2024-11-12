@@ -31,6 +31,7 @@ struct FunctionCallByString g_command_list[500] =
         commandIntoFunction(mymkdir),
         commandIntoFunction(myls),
         commandIntoFunction(mytouch),
+        commandIntoFunction(myrmdir),
     };
 void Print_ID(char *computerId, char *userId);
 void Print_WD();

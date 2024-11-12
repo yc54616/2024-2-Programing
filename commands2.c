@@ -13,16 +13,42 @@ static void _Tree(unsigned char *, unsigned char, int, char *, int);
 
 void mytouch(char **commands){
 	if(commands[1] == NULL){
-		printf("Params Empty..");
+		printf("Params Empty..");//error
 		return;
 	}
 	char *argument = commands[1];
-	char str[8];
+	char str[8] = {0};
+	int inode_number;
 	strcpy(str,argument);
-	if(findDictoryNameToInode(str) != 0){
+	inode_number = findDictoryNameToInode(str);
+	if(inode_number != 0){
 		printf("FIND!!\n");
-		printf("%d\n",findDictoryNameToInode(str));
+		printf("%d\n",inode_number);
 	};
+
+    time_t curTime;
+    InodeList inode_list;
+
+    time(&curTime);
+    if (inode_number > 0)//파일이 존재할 때
+    {
+    	inode_list = getInodeList(working_directory -> my_inode_number);
+    	inode_list.access_date = curTime;
+    }
+    else
+    {
+    	inode_number = findEmptyInode();
+		int dataBlock_num = findEmptyDataBlock();
+		unsigned char address[8] = {dataBlock_num,};
+    	setInodeList(inode_number, GENERAL, curTime, curTime, 0, 1, address, 0);
+
+		str[7] = inode_number;
+
+		InodeList inode_list = getInodeList(working_directory -> my_inode_number);//파일 새로 만들기
+		writeDirectoryDataBlock(str, working_directory -> my_inode_number - 1, inode_list.size - 16);
+	}
+	setSuperBlock(inode_number, 1);
+	setSuperBlock(SIZE_INODELIST + inode_number, 1);
 }
 
 void mymkdir(char **commands)
@@ -70,6 +96,42 @@ void mymkdir(char **commands)
 	setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, curDictory.birth_date, curDictory.size+8, curDictory.reference_count, curDictory.direct_address, curDictory.single_indirect_address);
 
 	free(names);
+}
+
+void myrmdir(char **commands)
+{
+    char *argument = commands[1];
+
+	if (commands[1] == NULL)
+        return;
+
+    int inode_number = findDictoryNameToInode(argument);
+    
+    if (inode_number == 0)
+        return;
+
+    InodeList inode_list = getInodeList(inode_number);
+	DataBlock curDatablock = getDataBlock(inode_number- 1);
+
+    if (inode_list.file_mode != DIRECTORY)
+        return;
+
+    // 디렉토리가 비어있는지 확인
+    if (inode_list.size > 16)
+    {
+        printf("Error: Directory '%s' is not empty.\n", argument);
+        return;
+    }
+
+	setInodeList(working_directory -> my_inode_number, 0, 0, 0, 0, 0, 0, 0);
+
+	/*for (int i = 0; i < 32; i++)
+	{
+		curDatablock.subfiles[i] = 0;
+	}
+
+	setSuperBlock(inode_number, 0);
+	setSuperBlock(SIZE_INODELIST + inode_number, 0);*/
 }
 
 void myls(char **commands)

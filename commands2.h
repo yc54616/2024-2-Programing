@@ -11,8 +11,10 @@
 /* functions */
 void mytouch(char **commands);
 void mymkdir(char **commands);
+void myrmdir(char **commands);
 void myls(char **commands);
 void mypwd(char **commands);
 void mycd(char **commands);
 void mytree(char **commands);
+
 #endif
