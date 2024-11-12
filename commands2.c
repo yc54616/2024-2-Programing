@@ -1,5 +1,6 @@
 #include "commands2.h"
 #include <time.h>
+#include <unistd.h>
 
 #define LAST_FILE 1
 #define DEPTH_START -1
@@ -11,15 +12,54 @@ extern int depth_working_directory;
 /* It seems like _mycd */
 static void _Tree(unsigned char *, unsigned char, int, char *, int);
 
+void mymkfs(char **commands){
+	char check[100] = "y";
+	bool flag = 0;
+	if((access(FILENAME, 0) != -1)){
+		printf("파일시스템이 있습니다. 다시 만들겠습니까? (y/n) ");
+		fgets(check, sizeof(check), stdin);
+		check[1] = 0;
+		flag = 1;
+	}
+	else{
+		printf("파일시스템이 없습니다. 파일시스템을 만듭니다.\n");
+	}
+
+	if(check[0] == 'y'){
+		if(flag)
+			printf("파일시스템을 다시 만들었습니다.\n");
+		initFilesystem();
+		setSuperBlock(1, 1);
+		setSuperBlock(SIZE_INODELIST + 1, 1);
+		time_t curTime;
+		time(&curTime);
+		unsigned char address[8] = {0,};
+		setInodeList(1, DIRECTORY, curTime, curTime, 16, 1, address, 0);
+		char *str = ".\x00\x00\x00\x00\x00\x00\x01";
+		writeDirectoryDataBlock(str, 0, 0);
+		str = "..\x00\x00\x00\x00\x00\x01";
+		writeDirectoryDataBlock(str, 0, 8);
+	}
+}
+
 void mytouch(char **commands){
 	if(commands[1] == NULL){
-		printf("Params Empty..");//error
+		printf("Params Empty..");
 		return;
 	}
 	char *argument = commands[1];
+	int len = strlen(argument);
+	if(len < 1 || len > 7){
+		printf("names too long..\n");
+		return;
+	}
 	char str[8] = {0};
 	int inode_number;
 	strcpy(str,argument);
+	if((strlen(str) == 1 && str[0] == '.') || (strlen(str) == 2 && str[0] == '.' && str[1] == '.')){
+		printf(". or .. directory can't be created..\n");
+		return;
+	}
 	inode_number = findDictoryNameToInode(str);
 	if(inode_number != 0){
 		printf("FIND!!\n");
@@ -32,23 +72,29 @@ void mytouch(char **commands){
     time(&curTime);
     if (inode_number > 0)//파일이 존재할 때
     {
-    	inode_list = getInodeList(working_directory -> my_inode_number);
+    	inode_list = getInodeList(inode_number);
     	inode_list.access_date = curTime;
+		setInodeList(inode_number, inode_list.file_mode, inode_list.access_date, inode_list.birth_date, inode_list.size, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
     }
     else
     {
     	inode_number = findEmptyInode();
 		int dataBlock_num = findEmptyDataBlock();
 		unsigned char address[8] = {dataBlock_num,};
+
+		setSuperBlock(inode_number, 1);
+		setSuperBlock(SIZE_INODELIST + inode_number, 1);
+
     	setInodeList(inode_number, GENERAL, curTime, curTime, 0, 1, address, 0);
 
 		str[7] = inode_number;
 
-		InodeList inode_list = getInodeList(working_directory -> my_inode_number);//파일 새로 만들기
-		writeDirectoryDataBlock(str, working_directory -> my_inode_number - 1, inode_list.size - 16);
+		inode_list = getInodeList(working_directory -> my_inode_number);//파일 새로 만들기
+		writeDirectoryDataBlock(str, working_directory -> my_inode_number - 1, inode_list.size);
+		setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, inode_list.birth_date, inode_list.size+8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
+
 	}
-	setSuperBlock(inode_number, 1);
-	setSuperBlock(SIZE_INODELIST + inode_number, 1);
+	
 }
 
 void mymkdir(char **commands)
@@ -70,11 +116,21 @@ void mymkdir(char **commands)
 	strcpy(names, argument);
 	printf(">> %s\n", names);
 
-	if(getExistence(names)){
-		printf("Existence directory..\n");
+	int inode_number = findDictoryNameToInode(names);
+
+	if((strlen(names) == 1 && names[0] == '.') || (strlen(names) == 2 && names[0] == '.' && names[1] == '.')){
+		printf(". or .. directory can't be created..\n");
 		free(names);
 		return;
 	}
+
+	if(inode_number != 0){
+		printf("Existence directory.. or file..\n");
+		printf("FIND!!\n");
+		printf("%d\n",inode_number);
+		free(names);
+		return;
+	};
 
 	int useInode = findEmptyInode();
 	int useDataBlock = findEmptyDataBlock();
@@ -91,8 +147,16 @@ void mymkdir(char **commands)
 	setSuperBlock(SIZE_INODELIST+useInode, 1);
 	unsigned char address[8] = {useDataBlock,};
 	setInodeList(useInode, DIRECTORY, curTime, curTime, 8 * 2, 1, address, 0);
+	unsigned char *str = calloc(sizeof(unsigned char), 8);
+	strcpy(str, ".");
+	str[7] = useInode;
+	writeDirectoryDataBlock(str, useDataBlock, 0);
+	memset(str, 0, sizeof(str));
+	strcpy(str, "..");
+	str[7] = working_directory->parent->my_inode_number;
+	writeDirectoryDataBlock(str, useDataBlock, 8);
 
-	writeDirectoryDataBlock(names, working_directory->my_inode_number-1, curDictory.size-16);
+	writeDirectoryDataBlock(names, working_directory->my_inode_number-1, curDictory.size);
 	setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, curDictory.birth_date, curDictory.size+8, curDictory.reference_count, curDictory.direct_address, curDictory.single_indirect_address);
 
 	free(names);
@@ -152,18 +216,18 @@ void myls(char **commands)
 		}
 	}
 
-	inode = getInodeList(working_directory->my_inode_number);
-	pt = localtime(&inode.access_date);
-	printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
-	printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
-	printf("%d\t", working_directory->my_inode_number);
-	printf("%d byte  .\n", inode.size);
-	inode = getInodeList(working_directory->parent->my_inode_number);
-	pt = localtime(&inode.access_date);
-	printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
-	printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
-	printf("%d\t", working_directory->parent->my_inode_number);
-	printf("%d byte  ..\n", inode.size);
+	// inode = getInodeList(working_directory->my_inode_number);
+	// pt = localtime(&inode.access_date);
+	// printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
+	// printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
+	// printf("%d\t", working_directory->my_inode_number);
+	// printf("%d byte  .\n", inode.size);
+	// inode = getInodeList(working_directory->parent->my_inode_number);
+	// pt = localtime(&inode.access_date);
+	// printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
+	// printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
+	// printf("%d\t", working_directory->parent->my_inode_number);
+	// printf("%d byte  ..\n", inode.size);
 
 	for (int i = 0; i < cnt; i++)
 	{

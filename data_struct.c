@@ -18,7 +18,7 @@ unsigned char findDictoryNameToInode(char *argument)
 	
 	char compareStr[8];
 
-	for(int i = 0; i < (inodelist.size-16)/8; i++)
+	for(int i = 2; i < (inodelist.size)/8; i++)
 	{
 		memset(compareStr, 0, sizeof(compareStr));
 		for (int j = 0; j < 7; j++)
