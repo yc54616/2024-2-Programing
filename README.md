@@ -60,3 +60,11 @@ shell 파일로 구성할 것
 
 현재 gcc하는 법:  
 gcc -o main commands2.c data_struct.c io_stream.c shell.c fs_status_print.c
+
+2024-11-13 Found Error
+
+input :
+[/ ]$ myls asdfasdfasdf -> not exist.
+
+output :
+== [/ $] myls

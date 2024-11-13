@@ -328,7 +328,8 @@ void mytree(char **commands)
 			printf("%s", path);
 			_Tree(NULL, virtual_working_directory -> my_inode_number, DEPTH_START, inheriting_string, LAST_FILE);
 			clearVWD(&virtual_working_directory, virtual_depth_working_directory);
-		}
+		} else
+			printf("Such directory doesn'y exist\n");
 		free(path);
 	}
 }
@@ -348,11 +349,6 @@ static void _Tree(unsigned char *name, unsigned char inode_number, int depth, ch
 	// printing myself according to depth and last file
 	printf("%s", inherited_string);
 	if (depth != DEPTH_START) { // This directory is the direct child of the (virtual) working directory.
-		// If I am either . or .. then I was printed before, and if i will call this reculsively, then the process will be collapse.
-		if (_compare_files(name, ".") || _compare_files(name, ".."))
-			return;
-
-		// Not.
 		if (last_file == LAST_FILE) // If this is the last child of (v).w.d,
 			printf("└── ");
 		else
@@ -417,7 +413,7 @@ static void _Tree(unsigned char *name, unsigned char inode_number, int depth, ch
 
 		qsort(properties_of_children, count_files, sizeof(unsigned char *), _compare_files);
 		
-		if (count_files != 0) {
+		if (count_files != 2) {
 			depth++;
 			inheriting_string = (char *) malloc(sizeof(char) * (4 * depth + 1));
 			strcpy(inheriting_string, inherited_string);
@@ -427,7 +423,7 @@ static void _Tree(unsigned char *name, unsigned char inode_number, int depth, ch
 				else
 					strcat(inheriting_string, "│   ");
 			}
-			for (i = 0; i < count_files - 1; i++)
+			for (i = 2; i < count_files - 1; i++)
 				_Tree(*(properties_of_children + i), *(*(properties_of_children + i) + 7), depth, inheriting_string, !LAST_FILE);
 				_Tree(*(properties_of_children + i), *(*(properties_of_children + i) + 7), depth, inheriting_string, LAST_FILE);
 			free(inheriting_string);
