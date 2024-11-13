@@ -1,10 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <stdbool.h>
-#include <string.h>
-#include "file_system.h"
-#include "io_stream.h"
+#include "header.h"
 
 void myshowfile(int num1, int num2, char* file_name) {
     char* entire_contents = getFileContentsWithSourceFileName(file_name); 
