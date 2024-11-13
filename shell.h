@@ -1,17 +1,13 @@
+
+#include "header.h"
+
+#include "fs_status_print.h"
+#include "my_dir_commands.h"
+
 #ifndef __SHELL_H__
-#	define __SHELL_H__ 1
+#define __SHELL_H__ 1
 
-#	include <stdio.h>
-#	include <stdlib.h>
-#	include <string.h>
-#	include <stdbool.h>
-
-#	include "data_struct.h"
-#	include "fs_status_print.h"
-#	include "commands2.h"
-
-#	define string(a) #a
-#	define commandIntoFunction(commandName) {#commandName, commandName} // struct g_command_list 만들기 용이하게 하기 위해 선언
+#define commandIntoFunction(commandName) {#commandName, commandName} // struct g_command_list 만들기 용이하게 하기 위해 선언
 // commands list
 void print1(char **command); // 테스트용 함수
 void echo(char **command);
@@ -30,6 +26,9 @@ struct FunctionCallByString g_command_list[500] =
         commandIntoFunction(mytree),
         commandIntoFunction(mymkdir),
         commandIntoFunction(myls),
+        commandIntoFunction(mytouch),
+        commandIntoFunction(myrmdir),
+        commandIntoFunction(mymkfs),
     };
 void Print_ID(char *computerId, char *userId);
 void Print_WD();

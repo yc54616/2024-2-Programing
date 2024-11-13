@@ -2,9 +2,7 @@
  * ( In actual, I expect you to read this without comments for understanding entire code. )
  */
 
-#include <stdio.h>
-
-#include "io_stream.h"
+#include "header.h"
 
 void printInodeList(InodeList il);
 void printDataBlock(DataBlock db);

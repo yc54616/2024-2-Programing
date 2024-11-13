@@ -8,6 +8,8 @@
 #include "file_system.h"
 #include "io_stream.h"
 
+#define errmsg printf
+
 typedef struct chainedDirectory {
 	unsigned char my_name[7];
 	unsigned char my_inode_number;
@@ -27,7 +29,7 @@ struct FunctionCallByString
 };
 
 /* functions */
-
+unsigned char findDictoryNameToInode(char * argument);
 int compare_directory_names(unsigned char *, unsigned char *);
 int getExistence(unsigned char *);
 /* To move the first-second parameter-what you want to move
@@ -45,4 +47,8 @@ void clearVWD(chainedDirectory **, int);
  * 1 : successfully moved
  */
 int cd(chainedDirectory **, int *, unsigned char *);
+
+void myinode(char **command);
+void mydatablock(char **command);
+void mystatus(char **command);
 #endif

@@ -3,11 +3,6 @@
 
 #include "io_stream.h"
 
-// 문자열 패딩 \x00
-void padding(){
-
-}
-
 // 0인 비어있는 inode superblock 찾기 
 unsigned char findEmptyInode(){
 	SuperBlock superblock = getSuperBlock();
@@ -173,9 +168,10 @@ void setInodeList(int index, bool file_mode, time_t access_date, time_t birth_da
 	in.birth_date = birth_date;
 	in.size = size;
 	in.reference_count = reference_count;
-	if (reference_count != 9)
+	if (reference_count != 9){
 		for (i = 0; i < reference_count; i++)
 			in.direct_address[i] = direct_address[i];
+	}
 	else
 		in.single_indirect_address = single_indirect_address;
 
