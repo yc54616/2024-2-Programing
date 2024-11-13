@@ -198,6 +198,11 @@ static void _Tree(unsigned char *name, unsigned char inode_number, int depth, ch
 	// printing myself according to depth and last file
 	printf("%s", inherited_string);
 	if (depth != DEPTH_START) { // This directory is the direct child of the (virtual) working directory.
+		// If I am either . or .. then I was printed before, and if i will call this reculsively, then the process will be collapse.
+		if (_compare_files(name, ".") || _compare_files(name, ".."))
+			return;
+
+		// Not.
 		if (last_file == LAST_FILE) // If this is the last child of (v).w.d,
 			printf("└── ");
 		else
