@@ -1,6 +1,48 @@
 # 2024-2-Programing
 
-- gcc -o commands2 commands2.c data_struct.c io_stream.c shell.c fs_status_print.c && ./commands2 
+
+현재 gcc하는 법:  
+gcc -o main1 my_dir_commands.c my_file_commands.c system/data_struct.c system/io_stream.c shell.c
+
+error found:
+1.
+디렉토리와 이름이 같은 파일을 만들 수 없음
+혹은 디렉토리와 이름이 같으면 표시되지 않는듯
+
+2.
+[/ ]$ mytree
+.
+├──
+├──
+├── 2192
+│   ├──
+│   ├──
+│   └── 93
+│       ├──
+│       └──
+├── 24
+│   ├──
+│   └──
+├── 293
+│   ├──
+│   └──
+├── 93
+│   ├──
+│   └──
+├── aks
+│   ├──
+│   └──
+└── asd
+    ├──
+    └──
+
+[/ ]$ mypwd
+/
+
+[/ ]$ mytouch my_touch_commands_
+*** stack smashing detected ***: terminated
+Aborted (core dumped)
+
 
 파일들의 include, defnie, struct, union, function 
 
@@ -52,11 +94,6 @@ getInodeList, getDataBlock
 
 총 io_stream, data_struct, file_system, 
 my_directory_commands, my_file_commands, 
-fs_status_print, header.h
+header.h
 shell 파일로 구성할 것
 
-
-+time.h
-
-현재 gcc하는 법:  
-gcc -o main1 my_dir_commands.c system/data_struct.c system/io_stream.c shell.c

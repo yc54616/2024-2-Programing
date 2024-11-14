@@ -11,20 +11,6 @@ extern int depth_working_directory;
 /* It seems like _mycd */
 static void _Tree(unsigned char *, unsigned char, int, char *, int);
 
-void mytouch(char **commands){
-	if(commands[1] == NULL){
-		printf("Params Empty..");
-		return;
-	}
-	char *argument = commands[1];
-	char str[8];
-	strcpy(str,argument);
-	if(findDictoryNameToInode(str) != 0){
-		printf("FIND!!\n");
-		printf("%d\n",findDictoryNameToInode(str));
-	};
-}
-
 void mymkdir(char **commands)
 {
 	if(commands[1] == NULL){

@@ -1,8 +1,7 @@
 
 #include "header.h"
-
-#include "fs_status_print.h"
 #include "my_dir_commands.h"
+#include "my_file_commands.h"
 
 #ifndef __SHELL_H__
 #define __SHELL_H__ 1
