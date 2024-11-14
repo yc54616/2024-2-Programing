@@ -28,6 +28,7 @@ void mytouch(char **commands)
     {
         inode_list = getInodeList(working_directory->my_inode_number);
         inode_list.access_date = curTime;
+        setInodeList(inode_number, inode_list.file_mode, inode_list.access_date, inode_list.birth_date, inode_list.size, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
     }
     else
     {
