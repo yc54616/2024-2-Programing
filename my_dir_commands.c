@@ -200,7 +200,43 @@ void myrmdir(char **commands)
 
 void myls(char **commands)
 {
-	DataBlock data_block = getDataBlock(working_directory->my_inode_number - 1);
+	
+    // NULL => '\0'로 대체 가능하다.
+		
+
+	char *argument = commands[1];
+	unsigned char c;
+	int length;
+	unsigned char *path = NULL;
+	bool flag = true;
+	int copyInode = working_directory->my_inode_number - 1;
+
+	if (argument != NULL)
+	{
+		for (length = 0; (c = argument[length]) != '\0'; length++)
+			;
+		path = (unsigned char *)malloc(sizeof(unsigned char) * length);
+		strcpy(path, argument);
+		printf("%s\n", path);
+
+		chainedDirectory *virtual_working_directory; // Virtually we use it alternately instead of virtual working directory.
+		int virtual_depth_working_directory;	
+
+		copyWorkingDirectory(&virtual_working_directory); // We must free them. => using clearVWD before returning(function ending)
+		virtual_depth_working_directory = depth_working_directory;
+
+		if (cd(&virtual_working_directory, &virtual_depth_working_directory, path) == 0)
+		{ // If failed cd,
+			printf("Such directory doesn't exist\n");
+		}
+		printf("virtualD : %d\n", virtual_working_directory->my_inode_number);
+		printf("workD : %d\n", working_directory->my_inode_number);
+
+		free(path);
+		copyInode = virtual_working_directory->my_inode_number - 1;
+	}
+	
+	DataBlock data_block = getDataBlock(copyInode);
 	InodeList inode;
 	struct tm *pt;
 	int *inodelist = NULL;
@@ -215,19 +251,6 @@ void myls(char **commands)
 			*(inodelist + (cnt - 1)) = *(data_block.contents + i);
 		}
 	}
-
-	// inode = getInodeList(working_directory->my_inode_number);
-	// pt = localtime(&inode.access_date);
-	// printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
-	// printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
-	// printf("%d\t", working_directory->my_inode_number);
-	// printf("%d byte  .\n", inode.size);
-	// inode = getInodeList(working_directory->parent->my_inode_number);
-	// pt = localtime(&inode.access_date);
-	// printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
-	// printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
-	// printf("%d\t", working_directory->parent->my_inode_number);
-	// printf("%d byte  ..\n", inode.size);
 
 	for (int i = 0; i < cnt; i++)
 	{
