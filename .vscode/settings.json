@@ -9,6 +9,7 @@
         "io_stream.h": "c",
         "file_system.h": "c",
         "stdbool.h": "c",
-        "time.h": "c"
+        "time.h": "c",
+        "string": "c"
     }
 }

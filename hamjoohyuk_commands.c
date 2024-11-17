@@ -3,12 +3,18 @@
 #include <time.h>
 #include <stdbool.h>
 #include <string.h>
-#include "file_system.h"
-#include "io_stream.h"
-#include "data_struct.h"
+#include "system/file_system.h"
+#include "system/io_stream.h"
+#include "system/data_struct.h"
 
-extern chainedDirectory *working_directory;
 time_t current_time;
+
+// int getDirectoryInodeNumberWithDirectoryName(char* directory_name) {
+//     SuperBlock super_block = getSuperBlock();
+// 	InodeList inode_list;
+//     DataBlock data_block;
+    
+// }
 
 int getNeededDirectAdressNumber(char* entire_contents) {
     if (strlen(entire_contents) > 256 * 8) { 
@@ -39,17 +45,17 @@ void writeFileContents(char* entire_contents, int inode_list_adress, int direct_
 	InodeList inode_list = getInodeList(inode_list_adress);
     DataBlock data_block;
     char data_block_adress[8] = {0};
-    unsigned char divided_contents[8][256] = {0};  // 8개의 256바이트 배열 선언(Direct Block)
+    unsigned char divided_contents_but_it_will_be_replaced_because_it_has_error_and_i_love_long_long_variable_name[8][256] = {0};  // 8개의 256바이트 배열 선언(Direct Block)
     unsigned char new_contents[256] = {0};
 
     for (int i = 0; i < direct_adress_number && i * 256 < strlen(entire_contents); i++) {  // 256바이트씩 나눠서 배열에 복사
-        strncpy(divided_contents[i], entire_contents + i * 256, 256);
+        strncpy(divided_contents_but_it_will_be_replaced_because_it_has_error_and_i_love_long_long_variable_name[i], entire_contents + i * 256, 256);
     }
 
     for(int i = 0; i < direct_adress_number; i++) {
         data_block_adress[i] = inode_list.direct_address[i];
-        if(divided_contents[i] != NULL && strlen(divided_contents[i]) != 0) {
-                for(int j = 0; j < 256; j++) new_contents[j] = divided_contents[i][j];
+        if(divided_contents_but_it_will_be_replaced_because_it_has_error_and_i_love_long_long_variable_name[i] != NULL && strlen(divided_contents_but_it_will_be_replaced_because_it_has_error_and_i_love_long_long_variable_name[i]) != 0) {
+                for(int j = 0; j < 256; j++) new_contents[j] = divided_contents_but_it_will_be_replaced_because_it_has_error_and_i_love_long_long_variable_name[i][j];
                 setDataBlock(data_block_adress[i], new_contents);
                 data_block = getDataBlock(data_block_adress[i]); 
                 continue;
@@ -123,15 +129,15 @@ char* getFileContentsWithSourceFileName(char* source_file) {
 
 
 void myshowfile(int num1, int num2, char* file_name) {
-    char* entire_contents = getFileContentsWithSourceFileName(file_name); 
-    int len = strlen(entire_contents);
-    if (num1 < 0 || num2 >= len || num1 > num2) {
-        printf("입력값 오류"); //임시
+    //char* entire_contents = getFileContentsWithSourceFileName(file_name); 
+    //int len = strlen(entire_contents);
+    if (num1 < 0 || num2 >= strlen(getFileContentsWithSourceFileName(file_name)) || num1 > num2) {
+        printf("범위가 올바르지 않습니다."); //임시
         return;
     }
 
     for (int i = num1; i <= num2; i++) {
-        printf("%c", entire_contents[i]);
+        printf("%c", getFileContentsWithSourceFileName(file_name)[i]);
     }
     printf("\n");
 }
@@ -204,8 +210,7 @@ int main() {
     SuperBlock super_block = getSuperBlock();
 	InodeList inode_list;
     DataBlock data_block;
-    working_directory -> 
-    printf("%s", working_directory -> my_name);
+    //printf("%s", working_directory -> my_name);
     /*char* test_257_byte = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567\x00";
     int inode_list_adress = allocateInodeForNewFiles("filename.txt", getNeededDirectAdressNumber(test_257_byte));
     writeFileContents(test_257_byte, inode_list_adress, getNeededDirectAdressNumber(test_257_byte));
@@ -219,7 +224,7 @@ int main() {
         printf("\n");
         
     }*/
-   
+    printf("%d", getDirectoryInodeNumber());
    //mycpfrom("test_host.txt", "test");
 
 
