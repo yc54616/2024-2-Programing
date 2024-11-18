@@ -10,9 +10,8 @@ chainedDirectory *working_directory;
 int depth_working_directory;
 
 
-int getDirectoryInodeNumber() {
-	int result = working_directory->my_inode_number;
-	return result;
+int getNowWorkingDirectoryInodeNumber() {
+	return working_directory->my_inode_number;
 }
 
 unsigned char findDictoryNameToInode(char *argument)
