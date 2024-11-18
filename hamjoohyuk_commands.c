@@ -7,14 +7,11 @@
 #include "system/io_stream.h"
 #include "system/data_struct.h"
 
-time_t current_time;
-
-// int getDirectoryInodeNumberWithDirectoryName(char* directory_name) {
-//     SuperBlock super_block = getSuperBlock();
-// 	InodeList inode_list;
-//     DataBlock data_block;
-    
-// }
+time_t getCurTime() {
+    time_t cur_time;
+    time(&cur_time);
+    return cur_time;
+}
 
 int getNeededDirectAdressNumber(char* entire_contents) {
     if (strlen(entire_contents) > 256 * 8) { 
@@ -29,14 +26,18 @@ int allocateInodeForNewFiles(char* new_file_name, int direct_adress_number) {
     DataBlock data_block;
     unsigned char new_inode_list_index = findEmptyInode();
     unsigned char new_data_block_index[8] = {0};
+    int directory_inode_number = getNowWorkingDirectoryInodeNumber();
+    int now_working_directory_inode_number = getNowWorkingDirectoryInodeNumber();
     setSuperBlock(new_inode_list_index, 1);
+    setInodeList(now_working_directory_inode_number, DIRECTORY, inode_list.birth_date, getCurTime(), inode_list.size, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
 
     for(int i = 0; i < direct_adress_number; i++) {
         new_data_block_index[i] = findEmptyDataBlock();
         setSuperBlock(128 + new_data_block_index[i] + 1, 1);
     }
 
-    setInodeList(new_inode_list_index, 0, 1, 1, 1, direct_adress_number, new_data_block_index, 0);
+    inode_list = getInodeList(directory_inode_number);
+    setInodeList(new_inode_list_index, 0, getCurTime(), inode_list.birth_date, inode_list.size, direct_adress_number, new_data_block_index, 0);
     return new_inode_list_index;
 }
 
@@ -204,30 +205,4 @@ void mycpfrom(char* host_source_file, char* dest_file) {
     // inode_list = getInodeList(working_directory.my_inode_number);
     // setInodeList(working_directory.my_inode_number, 1, inode_list.birth_date, 1, 1, inode_list.reference_count + 1,  inode_list.direct_address, inode_list.single_indirect_address);
     
-}
-
-int main() {
-    SuperBlock super_block = getSuperBlock();
-	InodeList inode_list;
-    DataBlock data_block;
-    //printf("%s", working_directory -> my_name);
-    /*char* test_257_byte = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567\x00";
-    int inode_list_adress = allocateInodeForNewFiles("filename.txt", getNeededDirectAdressNumber(test_257_byte));
-    writeFileContents(test_257_byte, inode_list_adress, getNeededDirectAdressNumber(test_257_byte));
-    inode_list = getInodeList(inode_list_adress);
-    for(int i = 0; i < 8; i++) {
-        data_block = getDataBlock(inode_list.direct_address[i]);
-        for(int j = 0; j < 256; j++){
-            
-            printf("%c", data_block.contents[j]);
-        }
-        printf("\n");
-        
-    }*/
-    printf("%d", getDirectoryInodeNumber());
-   //mycpfrom("test_host.txt", "test");
-
-
-    //printf("%s", getFileContentsWithSourceFileName("")); //파일 이름 삽입
-    //writeFileContents("");
 }
