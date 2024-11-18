@@ -29,6 +29,7 @@ struct FunctionCallByString
 };
 
 /* functions */
+int getNowWorkingDirectoryInodeNumber();
 unsigned char findDictoryNameToInode(char * argument);
 int compare_directory_names(unsigned char *, unsigned char *);
 int getExistence(unsigned char *);
