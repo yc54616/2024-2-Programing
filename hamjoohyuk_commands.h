@@ -7,8 +7,10 @@
 #include "system/io_stream.h"
 #include "system/data_struct.h"
 
+time_t getCurTime();
 int getNeededDirectAdressNumber(char*);
 int allocateInodeForNewFiles(char*, int);
 void writeFileContents(char* , int , int );
 char getAllDirectAdressWithSourceFileName(char* , int );
 char* getFileContentsWithSourceFileName(char* );
+void mycpfrom(char**);
