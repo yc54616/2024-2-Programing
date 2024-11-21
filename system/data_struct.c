@@ -69,7 +69,7 @@ void writeWorkingDirectoryDataBlock(char *name, int inode)
 
 		writeDirectoryDataBlock(name, inode_list.direct_address[inode_list.reference_count - 1], inode_list.size%256);
 		setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
-
+	}
 }
 
 int getNowWorkingDirectoryInodeNumber() {
