@@ -2,6 +2,7 @@
 #include "header.h"
 
 #include "my_dir_commands.h"
+#include "hamjoohyuk_commands.h"
 
 #ifndef __SHELL_H__
 #define __SHELL_H__ 1
@@ -28,6 +29,7 @@ struct FunctionCallByString g_command_list[500] =
         commandIntoFunction(mytouch),
         commandIntoFunction(myrmdir),
         commandIntoFunction(mymkfs),
+        commandIntoFunction(mycpfrom),
     };
 void Print_ID(char *computerId, char *userId);
 void Print_WD();

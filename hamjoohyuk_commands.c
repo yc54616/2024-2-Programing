@@ -222,7 +222,7 @@ void mycpfrom(char** commands) {
     file_count = fread(buffer, host_txt_size, 1, host_txt);    
 
     getNeededDirectAdressNumber(buffer);
-    inode_list_address_of_dest_file = allocateInodeForNewFiles(dest_file, getNeededDirectAdressNumber(buffer), sizeof(buffer));
+    inode_list_address_of_dest_file = allocateInodeForNewFiles(dest_file, getNeededDirectAdressNumber(buffer), strlen(buffer));
     writeFileContents(buffer, inode_list_address_of_dest_file, getNeededDirectAdressNumber(buffer));
 
     fclose(host_txt);   
