@@ -59,21 +59,28 @@ void printInodeList(InodeList inode_list)
 	printf("type and direct or indirect : %d\n", inode_list.file_mode); // it wasn't used for shift ..
 	printf("date : %ld\n", inode_list.birth_date); // temporary
 	printf("size : %u\n", inode_list.size);
+	printf("reference_count: %d\n", inode_list.reference_count);
 	printf("directs : ");
 	for (i = 0; i < 8; i++)
 		printf("%d ", inode_list.direct_address[i]);
 	printf("\n");
+	printf("single_indirect_address : %d \n", inode_list.single_indirect_address);
+	
 }
 void printDataBlock(DataBlock data_block)
 {
 	int i;
 
 	for (i = 0; i < sizeof(DataBlock); i++){
+		
 		if(data_block.contents[i] == '\0')
-			printf(" ");
+			printf("#");
 		else if('a' <= data_block.contents[i] && data_block.contents[i] <= 'z')
 			printf("%c", data_block.contents[i]);
 		else
 			printf("%d", data_block.contents[i]);
+		if((i+1)%8 == 0){
+			printf("\n");
+		}
 	}
 }

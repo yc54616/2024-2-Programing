@@ -9,6 +9,7 @@
 #	include "file_system.h"
 unsigned char findEmptyInode();
 unsigned char findEmptyDataBlock();
+void writeIndirectDataBlock(int address, int datablockIndex);
 void writeDirectoryDataBlock(char name[], int datablockIndex, int startIndex);
 void setBit(Byte *byte, int index, bool bit);
 void initFilesystem();

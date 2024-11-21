@@ -11,6 +11,18 @@
         "stdbool.h": "c",
         "time.h": "c",
         "string": "c",
-        "string_view": "c"
+        "string_view": "c",
+        "random": "c",
+        "array": "c",
+        "bitset": "c",
+        "initializer_list": "c",
+        "ranges": "c",
+        "span": "c",
+        "regex": "c",
+        "utility": "c",
+        "malloc.h": "c",
+        "typeindex": "c",
+        "typeinfo": "c",
+        "coroutine": "c"
     }
 }
