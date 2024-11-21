@@ -102,9 +102,7 @@ void mytouch(char **commands)
 
 		str[7] = inode_number;
 
-		inode_list = getInodeList(working_directory->my_inode_number); // 파일 새로 만들기
-		writeDirectoryDataBlock(str, working_directory->my_inode_number - 1, inode_list.size);
-		setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
+		writeDirectory(str, working_directory->my_inode_number, GENERAL);
 	}
 }
 
@@ -173,10 +171,7 @@ void mymkdir(char **commands)
 	str[7] = working_directory->parent->my_inode_number;
 	writeDirectoryDataBlock(str, useDataBlock, 8);
 
-	writeWorkingDirectoryDataBlock(names, working_directory->my_inode_number);
-	
-
-	//writeWorkingDirectoryDataBlock(names);
+	writeDirectory(names, working_directory->my_inode_number, DIRECTORY);
 
 	free(names);
 }
