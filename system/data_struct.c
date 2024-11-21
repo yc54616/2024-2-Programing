@@ -9,6 +9,7 @@
 chainedDirectory *working_directory;
 int depth_working_directory;
 
+
 // name : 디렉토리 이름, 마지막 바이트에는 가리키는 inode ex) lo     7
 // inode : inode 가 가리키는 datablock 들
 // 현재 wokring 디렉토리에 문자를 쓰도록 설계됨
@@ -69,7 +70,10 @@ void writeWorkingDirectoryDataBlock(char *name, int inode)
 		writeDirectoryDataBlock(name, inode_list.direct_address[inode_list.reference_count - 1], inode_list.size%256);
 		setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
 
-	}
+}
+
+int getNowWorkingDirectoryInodeNumber() {
+	return working_directory->my_inode_number;
 }
 
 unsigned char findDictoryNameToInode(char *argument)

@@ -30,6 +30,7 @@ struct FunctionCallByString
 
 /* functions */
 void writeWorkingDirectoryDataBlock(char *name, int inode);
+int getNowWorkingDirectoryInodeNumber();
 unsigned char findDictoryNameToInode(char * argument);
 int compare_directory_names(unsigned char *, unsigned char *);
 int getExistence(unsigned char *);
