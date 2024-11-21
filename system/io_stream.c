@@ -24,6 +24,22 @@ unsigned char findEmptyDataBlock(){
 		superblock.data_block[i/8].for_shift <<= 1;
 	}
 }
+
+// address : Indirect주소
+// datablockIndex : Indirect주소에 쓸 datablockaddress
+void writeIndirectDataBlock(int address, int datablockIndex){
+	DataBlock data_Block = getDataBlock(datablockIndex);
+	int size = data_Block.contents[0];
+	if(size == 256){
+		printf("this datablock over!\n");
+		return;
+	}
+	size += 1;
+	data_Block.contents[0] = size;
+	data_Block.contents[size] = address;
+	setDataBlock(datablockIndex, data_Block.contents);
+}
+
 // name : 디렉토리 이름, 마지막 바이트에는 가리키는 inode ex) lo     7
 // datablockIndex : datablock 인덱스
 // startIndex : name이 써질 datablock 안에 index (max=>256) 8씩 띄어져서 저장됨
@@ -168,12 +184,9 @@ void setInodeList(int index, bool file_mode, time_t access_date, time_t birth_da
 	in.birth_date = birth_date;
 	in.size = size;
 	in.reference_count = reference_count;
-	if (reference_count != 9){
-		for (i = 0; i < reference_count; i++)
-			in.direct_address[i] = direct_address[i];
-	}
-	else
-		in.single_indirect_address = single_indirect_address;
+	for (i = 0; i < 8; i++)
+		in.direct_address[i] = direct_address[i];
+	in.single_indirect_address = single_indirect_address;
 
 	fseek(file, sizeof(InodeList) * (index - 1), SEEK_CUR);
 	fwrite(&in, sizeof(in), 1, file);

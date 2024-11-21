@@ -3,12 +3,74 @@
  * 2. the function for directory
  */
 #include "data_struct.h"
-#include  <malloc.h>
+#include <malloc.h>
 
 /* definition of global variable */
 chainedDirectory *working_directory;
 int depth_working_directory;
 
+
+// name : 디렉토리 이름, 마지막 바이트에는 가리키는 inode ex) lo     7
+// inode : inode 가 가리키는 datablock 들
+// 현재 wokring 디렉토리에 문자를 쓰도록 설계됨
+void writeWorkingDirectoryDataBlock(char *name, int inode)
+{
+	InodeList inode_list = getInodeList(inode);	
+	time_t curTime;
+	time(&curTime);
+	int useDataBlockInode, indirectAddress;
+
+	bool indirectAddressUse = ((inode_list.reference_count > SIZE_DIRECT_POINTER) || (inode_list.reference_count == SIZE_DIRECT_POINTER && inode_list.size%256 == 0)) ? true : false;
+
+	if (indirectAddressUse)
+	{
+		//printf("indirectAddressUse\n");
+		if(inode_list.single_indirect_address == 0){
+			useDataBlockInode = findEmptyDataBlock();
+			//printf("useDataBlockInode : %d\n", useDataBlockInode);
+			inode_list.single_indirect_address = useDataBlockInode;			
+			setSuperBlock(SIZE_INODELIST + useDataBlockInode + 1, 1);
+		}
+		else{
+			useDataBlockInode = inode_list.single_indirect_address;
+		}
+
+		//printf("inode_list.single_indirect_address : %d\n", useDataBlockInode);
+		//printf("inode_list.size : %d\n", inode_list.size);
+
+		if(inode_list.size%256 == 0){
+			indirectAddress = findEmptyDataBlock();
+			//printf("indirectAddress : %d\n", indirectAddress);
+			inode_list.reference_count += 1;
+			setSuperBlock(SIZE_INODELIST + indirectAddress + 1, 1);
+			writeIndirectDataBlock(indirectAddress, useDataBlockInode);
+			//printf(">>>>>>>>> writeIndirect\n");
+		}
+
+		DataBlock db = getDataBlock(useDataBlockInode);
+		//printf("indirect block size : %d\n", db.contents[0]);
+		indirectAddress = db.contents[db.contents[0]];
+		//printf("indirectAddress : %d\n", indirectAddress);
+
+		writeDirectoryDataBlock(name, indirectAddress, (inode_list.size)%256);
+		setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
+		
+	}
+	else
+	{
+		if(inode_list.size%256 == 0){
+			//printf("size over!\n");
+			useDataBlockInode = findEmptyDataBlock();
+			inode_list.direct_address[inode_list.reference_count] = useDataBlockInode;
+			inode_list.reference_count += 1;
+			setSuperBlock(SIZE_INODELIST + useDataBlockInode + 1, 1);
+		}
+		//printf("inode_list.size %d\n", inode_list.size%256);
+
+		writeDirectoryDataBlock(name, inode_list.direct_address[inode_list.reference_count - 1], inode_list.size%256);
+		setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
+
+}
 
 int getNowWorkingDirectoryInodeNumber() {
 	return working_directory->my_inode_number;
@@ -16,22 +78,25 @@ int getNowWorkingDirectoryInodeNumber() {
 
 unsigned char findDictoryNameToInode(char *argument)
 {
-	char names[8];
+	char names[8] = {
+		0,
+	};
 	strcpy(names, argument);
 	DataBlock data_block = getDataBlock(working_directory->my_inode_number - 1);
 	InodeList inodelist = getInodeList(working_directory->my_inode_number);
-	
+
 	char compareStr[8];
 
-	for(int i = 2; i < (inodelist.size)/8; i++)
+	for (int i = 2; i < (inodelist.size) / 8; i++)
 	{
 		memset(compareStr, 0, sizeof(compareStr));
 		for (int j = 0; j < 7; j++)
 		{
-			compareStr[j] = data_block.contents[i*8+j];
+			compareStr[j] = data_block.contents[i * 8 + j];
 		}
-		if (strcmp(compareStr, names) == 0){
-			return data_block.contents[i*8+7];
+		if (strcmp(compareStr, names) == 0)
+		{
+			return data_block.contents[i * 8 + 7];
 		}
 	}
 
@@ -389,26 +454,31 @@ void myinode(char **commands)
 	char c;
 	int i;
 	int direct_pointer_count;
-	
-	if (commands[1] == NULL) {
+
+	if (commands[1] == NULL)
+	{
 		errmsg("The first argument must be filled!\n");
 		return;
 	}
 
-	for (i = 0; (c = commands[1][i]) != '\0'; i++) {
-		if (c < '0' || c > '9') {
+	for (i = 0; (c = commands[1][i]) != '\0'; i++)
+	{
+		if (c < '0' || c > '9')
+		{
 			errmsg("The first arg must be positive integer format!\n");
 			return;
 		}
 	}
 
-	if (i == 0) {
+	if (i == 0)
+	{
 		errmsg("The first arg must be filled!\n");
 		return;
 	}
 
 	inode_number = strtol(commands[1], NULL, 10);
-	if (! (inode_number >= 1 && inode_number <= SIZE_INODELIST)) {
+	if (!(inode_number >= 1 && inode_number <= SIZE_INODELIST))
+	{
 		errmsg("The first arg must be in the (closed) section-[1, %d]!\n", SIZE_INODELIST);
 		return;
 	}
@@ -423,53 +493,62 @@ void myinode(char **commands)
 		printf("  #%d 직접 데이터 블록 : %d\n", i, inode_list.direct_address[i]);
 	printf("간접 블록 번호 : %d\n", inode_list.single_indirect_address);
 }
-void mydatablock(char **commands) {
+void mydatablock(char **commands)
+{
 	int block_address;
 	DataBlock data_block;
 	char c;
 	int i;
-	
-	if (commands[1] == NULL) {
+
+	if (commands[1] == NULL)
+	{
 		errmsg("The first argument must be filled!\n");
 		return;
 	}
 
-	for (i = 0; (c = commands[1][i]) != '\0'; i++) {
-		if (c < '0' || c > '9') {
+	for (i = 0; (c = commands[1][i]) != '\0'; i++)
+	{
+		if (c < '0' || c > '9')
+		{
 			errmsg("The first arg must be positive integer format!\n");
 			return;
 		}
 	}
 
-	if (i == 0) {
+	if (i == 0)
+	{
 		errmsg("The first arg must be filled!\n");
 		return;
 	}
 
 	block_address = strtol(commands[1], NULL, 10);
-	if (! (block_address >= 0 && block_address <= SIZE_DATABLOCK - 1)) {
+	if (!(block_address >= 0 && block_address <= SIZE_DATABLOCK - 1))
+	{
 		errmsg("The first arg must be in the (closed) section-[0, %d]!\n", SIZE_DATABLOCK - 1);
 		return;
 	}
-	
+
 	data_block = getDataBlock(block_address);
 	for (i = 0; i < sizeof(data_block); i++)
 		printf("%c", data_block.contents[i]);
 	printf("\n");
 }
-void mystatus(char **commands) {
+void mystatus(char **commands)
+{
 	SuperBlock super_block;
 	int i, j, k;
 	int index;
 	int loop_size;
 	int used;
-	Byte * map;
-	
+	Byte *map;
+
 	super_block = getSuperBlock();
 	used = 0;
 	map = (Byte *)malloc(sizeof(Byte) * SIZE_INODELIST_IN_SUPERBLOCK);
-	for (i = 0; i < SIZE_INODELIST_IN_SUPERBLOCK; i++) {
-		for (j = 0; j < 8; j++) {
+	for (i = 0; i < SIZE_INODELIST_IN_SUPERBLOCK; i++)
+	{
+		for (j = 0; j < 8; j++)
+		{
 			map[i].for_shift <<= 1;
 			map[i].last_bit = super_block.inode_list[i].first_bit;
 			if (super_block.inode_list[i].first_bit)
@@ -484,15 +563,19 @@ void mystatus(char **commands) {
 	printf("    Available : %d\n", SIZE_INODELIST - used);
 	printf("    Inode Map :\n");
 	index = 0;
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < 2; i++)
+	{
 		printf("        ");
-		for (j = 0, loop_size = SIZE_INODELIST_IN_SUPERBLOCK / 2; j < loop_size; j++) {
-			for (k = 0; k < 4; k++) {
+		for (j = 0, loop_size = SIZE_INODELIST_IN_SUPERBLOCK / 2; j < loop_size; j++)
+		{
+			for (k = 0; k < 4; k++)
+			{
 				printf("%d", map[index].first_bit);
 				map[index].for_shift <<= 1;
 			}
 			printf(" ");
-			for ( ; k < 8; k++) {
+			for (; k < 8; k++)
+			{
 				printf("%d", map[index].first_bit);
 				map[index].for_shift <<= 1;
 			}
@@ -505,8 +588,10 @@ void mystatus(char **commands) {
 
 	used = 0;
 	map = (Byte *)malloc(sizeof(Byte) * SIZE_DATABLOCK_IN_SUPERBLOCK);
-	for (i = 0; i < SIZE_DATABLOCK_IN_SUPERBLOCK; i++) {
-		for (j = 0; j < 8; j++) {
+	for (i = 0; i < SIZE_DATABLOCK_IN_SUPERBLOCK; i++)
+	{
+		for (j = 0; j < 8; j++)
+		{
 			map[i].for_shift <<= 1;
 			map[i].last_bit = super_block.data_block[i].first_bit;
 			if (super_block.data_block[i].first_bit)
@@ -519,18 +604,22 @@ void mystatus(char **commands) {
 	printf("Data Block state : \n");
 	printf("    Total : %d blocks / %ld bytes\n", SIZE_DATABLOCK, SIZE_DATABLOCK * sizeof(DataBlock));
 	printf("    Used : %d / %ld bytes\n", used, used * sizeof(DataBlock));
-	printf("    Available : %d / %ld bytes\n", SIZE_DATABLOCK - used, ( SIZE_DATABLOCK - used ) * sizeof(DataBlock));
+	printf("    Available : %d / %ld bytes\n", SIZE_DATABLOCK - used, (SIZE_DATABLOCK - used) * sizeof(DataBlock));
 	printf("    Data Block Map :\n");
 	index = 0;
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 4; i++)
+	{
 		printf("        ");
-		for (j = 0, loop_size = SIZE_DATABLOCK_IN_SUPERBLOCK / 4; j < loop_size; j++) {
-			for (k = 0; k < 4; k++) {
+		for (j = 0, loop_size = SIZE_DATABLOCK_IN_SUPERBLOCK / 4; j < loop_size; j++)
+		{
+			for (k = 0; k < 4; k++)
+			{
 				printf("%d", map[index].first_bit);
 				map[index].for_shift <<= 1;
 			}
 			printf(" ");
-			for ( ; k < 8; k++) {
+			for (; k < 8; k++)
+			{
 				printf("%d", map[index].first_bit);
 				map[index].for_shift <<= 1;
 			}
@@ -542,4 +631,3 @@ void mystatus(char **commands) {
 	printf("\n");
 	free(map);
 }
-
