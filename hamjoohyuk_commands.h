@@ -13,4 +13,8 @@ int allocateInodeForNewFiles(char*, int);
 void writeFileContents(char* , int , int );
 char getAllDirectAdressWithSourceFileName(char* , int );
 char* getFileContentsWithSourceFileName(char* );
+void mycat(char**);
+void myshowfile(char** );
+void mycp(char** );
+void mycpto(char** );
 void mycpfrom(char**);

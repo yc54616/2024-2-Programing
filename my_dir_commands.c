@@ -140,7 +140,6 @@ void mymkdir(char **commands)
 	names[7] = useInode;
 
 	InodeList curDictory = getInodeList(working_directory->my_inode_number);
-
 	time_t curTime;
 	time(&curTime);
 	setSuperBlock(useInode, 1);
@@ -157,6 +156,7 @@ void mymkdir(char **commands)
 	writeDirectoryDataBlock(str, useDataBlock, 8);
 
 	writeDirectoryDataBlock(names, working_directory->my_inode_number-1, curDictory.size);
+	printf("%d", curDictory.size);
 	setInodeList(working_directory->my_inode_number, DIRECTORY, curTime, curDictory.birth_date, curDictory.size+8, curDictory.reference_count, curDictory.direct_address, curDictory.single_indirect_address);
 
 	free(names);

@@ -453,10 +453,10 @@ void mydatablock(char **commands) {
 	}
 	
 	data_block = getDataBlock(block_address);
-	for (i = 0; i < sizeof(data_block); i++)
-		printf("%c", data_block.contents[i]);
+	for (i = 0; i < sizeof(data_block); i++) printf("%c", data_block.contents[i]);
 	printf("\n");
 }
+
 void mystatus(char **commands) {
 	SuperBlock super_block;
 	int i, j, k;
