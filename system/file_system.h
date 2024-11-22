@@ -25,16 +25,17 @@ typedef union {
 } Byte;
 
 typedef struct {
-	Byte inode_list[SIZE_INODELIST/8]; // 16 bytes = 128 bit
-	Byte data_block[SIZE_DATABLOCK/8]; // 32 bytes = 256 bit
+	Byte inode_list[SIZE_INODELIST/8]; // 16 bytes = 128 bits
+	Byte data_block[SIZE_DATABLOCK/8]; // 32 bytes = 256 bits
 } SuperBlock;
 
 typedef struct {
 	unsigned char file_mode; // excluding permission ex) rwxr--r--
+
 	time_t access_date;
 	time_t birth_date;
 	unsigned int size;
-	unsigned char reference_count; // referring to number of pointers are consisted by a file.
+	unsigned char reference_count; //referring to number of pointers are consisted by a file.
 	unsigned char direct_address[SIZE_DIRECT_POINTER];
 	unsigned char single_indirect_address;
 } InodeList;
