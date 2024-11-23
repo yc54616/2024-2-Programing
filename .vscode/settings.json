@@ -23,6 +23,8 @@
         "malloc.h": "c",
         "typeindex": "c",
         "typeinfo": "c",
-        "coroutine": "c"
+        "coroutine": "c",
+        "my_dir_commands.h": "c",
+        "header.h": "c"
     }
 }

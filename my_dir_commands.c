@@ -50,27 +50,15 @@ void mymkfs(char **commands)
 
 void mytouch(char **commands)
 {
-	if (commands[1] == NULL)
-	{
-		printf("Params Empty..");
-		return;
-	}
 	char *argument = commands[1];
-	int len = strlen(argument);
-	if (len < 1 || len > 7)
-	{
-		printf("names too long..\n");
-		return;
-	}
-	char str[8] = {0};
-	int inode_number;
-	strcpy(str, argument);
-	if ((strlen(str) == 1 && str[0] == '.') || (strlen(str) == 2 && str[0] == '.' && str[1] == '.'))
-	{
-		printf(". or .. directory can't be created..\n");
-		return;
-	}
-	inode_number = findDictoryNameToInode(str);
+
+	int inode_number = findNameToInode(argument);
+
+	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
+	
+	findNameToBaseInode(argument, path, finalStr);
+
 	if (inode_number != 0)
 	{
 		printf("FIND!!\n");
@@ -89,6 +77,12 @@ void mytouch(char **commands)
 	}
 	else
 	{
+		chainedDirectory *virtual_working_directory;
+		int virtual_depth_working_directory = depth_working_directory;
+		copyWorkingDirectory(&virtual_working_directory);
+
+		cd(&virtual_working_directory, &virtual_depth_working_directory, path);
+
 		inode_number = findEmptyInode();
 		int dataBlock_num = findEmptyDataBlock();
 		unsigned char address[8] = {
@@ -100,59 +94,54 @@ void mytouch(char **commands)
 
 		setInodeList(inode_number, GENERAL, curTime, curTime, 0, 1, address, 0);
 
-		str[7] = inode_number;
+		finalStr[7] = inode_number;
 
-		writeDirectory(str, working_directory->my_inode_number, GENERAL);
+		writeDirectory(finalStr, virtual_working_directory->my_inode_number, DIRECTORY);
 	}
+
+	free(path);
+	free(finalStr);
 }
 
 void mymkdir(char **commands)
 {
-	if (commands[1] == NULL)
-	{
-		printf("Params Empty..");
-		return;
-	}
 	char *argument = commands[1];
-	int len = strlen(argument);
-	if (len < 1 || len > 7)
-	{
-		printf("names too long..\n");
+
+	if(findNameToInode(argument) != 0){
+		printf("mymkdir: 디렉터리를 만들 수 없습니다: 파일이 있습니다\n");
 		return;
 	}
 
-	printf("workding d : %d\n", working_directory->my_inode_number);
+	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
+	
+	int inode_number = findNameToBaseInode(argument, path, finalStr);
 
-	unsigned char *names = calloc(sizeof(unsigned char), 8);
-	strcpy(names, argument);
-	printf(">> %s\n", names);
+	printf("path : %s, finalStr : %s\n", path, finalStr);
 
-	int inode_number = findDictoryNameToInode(names);
-
-	if ((strlen(names) == 1 && names[0] == '.') || (strlen(names) == 2 && names[0] == '.' && names[1] == '.'))
-	{
-		printf(". or .. directory can't be created..\n");
-		free(names);
+	if(inode_number == 0){
+		printf("mymkdir: 디렉터리를 만들 수 없습니다: 그런 파일이나 디렉터리가 없습니다\n");
+		free(path);
+		free(finalStr);
 		return;
 	}
 
-	if (inode_number != 0)
-	{
-		printf("Existence directory.. or file..\n");
-		printf("FIND!!\n");
-		printf("%d\n", inode_number);
-		free(names);
-		return;
-	};
+	chainedDirectory *virtual_working_directory;
+	int virtual_depth_working_directory = depth_working_directory;
+	copyWorkingDirectory(&virtual_working_directory);
+
+	cd(&virtual_working_directory, &virtual_depth_working_directory, path);
+
+	printf("virtual_working_directory inode %d\n", virtual_working_directory->my_inode_number);
+
+	InodeList findInode = getInodeList(inode_number);
 
 	int useInode = findEmptyInode();
 	int useDataBlock = findEmptyDataBlock();
 
 	printf(">> useInode : %d, useDataBlock %d\n", useInode, useDataBlock);
 
-	names[7] = useInode;
-
-	
+	finalStr[7] = useInode;
 
 	time_t curTime;
 	time(&curTime);
@@ -168,12 +157,13 @@ void mymkdir(char **commands)
 	writeDirectoryDataBlock(str, useDataBlock, 0);
 	memset(str, 0, sizeof(str));
 	strcpy(str, "..");
-	str[7] = working_directory->parent->my_inode_number;
+	str[7] = virtual_working_directory->my_inode_number;
 	writeDirectoryDataBlock(str, useDataBlock, 8);
 
-	writeDirectory(names, working_directory->my_inode_number, DIRECTORY);
+	writeDirectory(finalStr, inode_number, DIRECTORY);
 
-	free(names);
+	free(path);
+	free(finalStr);
 }
 
 void myrmdir(char **commands)
@@ -183,7 +173,7 @@ void myrmdir(char **commands)
 	if (commands[1] == NULL)
 		return;
 
-	int inode_number = findDictoryNameToInode(argument);
+	int inode_number = findNameToInode(argument);
 
 	if (inode_number == 0)
 		return;
@@ -214,55 +204,54 @@ void myrmdir(char **commands)
 
 void myls(char **commands)
 {
-	char *argument = commands[1];
+	char *argument = *(commands+1);
 
-	InodeList workingInodeList = getInodeList(working_directory->my_inode_number);
-	DataBlock cntDataBlock;
-	int indirect_point_cnt = 0;
-	if(workingInodeList.single_indirect_address != 0){
-		cntDataBlock = getDataBlock(workingInodeList.single_indirect_address);
-		indirect_point_cnt = *(cntDataBlock.contents);
+	bool thisIsFile = false;
+
+	int getInode = working_directory->my_inode_number;
+
+	if(argument != NULL){
+		int f = findNameToInode(argument);
+		if(f == 0){
+			printf("myls: '%s'에 접근할 수 없음: 그런 파일이나 디렉터리가 없습니다\n", argument);
+			return;
+		}
+		else{
+			InodeList testInode = getInodeList(f);
+			if(testInode.file_mode == GENERAL)
+				thisIsFile = true;
+			getInode = f;
+		}
+	}	
+	
+	if(thisIsFile){
+		InodeList inode = getInodeList(getInode);
+		struct tm *pt = localtime(&inode.access_date);
+		unsigned char *str = NULL;
+		printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
+		printf("%s\t", inode.file_mode == DIRECTORY ? "directory" : "file");
+		printf("%d\t", getInode);
+		printf("%d byte  ", inode.size);
+		for (char *p = strtok(argument, "/"); p!=NULL; p = strtok(NULL, "/")){
+			str = (unsigned char *)realloc(str, sizeof(unsigned char) * strlen(p));
+			strcpy(str, p);
+		}
+		printf("%s", str);
+		printf("\n");
+		free(str);
 	}
-
-	for (int i = 0; i < workingInodeList.reference_count - indirect_point_cnt; i++)
-	{
-		DataBlock data_block = getDataBlock(*(workingInodeList.direct_address+i));
-
-		struct tm *pt;
-		int *inodelist = NULL;
-
-		int cnt = 0;
-		for (int i = 0; i < sizeof(DataBlock); i++)
-		{
-			if ((i + 1) % 8 == 0 && *(data_block.contents+i) != 0)
-			{
-				cnt++;
-				inodelist = (int *)realloc(inodelist, sizeof(int) * cnt);
-				*(inodelist + (cnt - 1)) = *(data_block.contents + i);
-			}
+	else{
+		InodeList workingInodeList = getInodeList(getInode);
+		DataBlock cntDataBlock;
+		int indirect_point_cnt = 0;
+		if(workingInodeList.single_indirect_address != 0){
+			cntDataBlock = getDataBlock(workingInodeList.single_indirect_address);
+			indirect_point_cnt = *(cntDataBlock.contents);
 		}
 
-		for (int i = 0; i < cnt; i++)
+		for (int i = 0; i < workingInodeList.reference_count - indirect_point_cnt; i++)
 		{
-			InodeList inode = getInodeList(*(inodelist + i));
-			pt = localtime(&inode.access_date);
-			printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
-			printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
-			printf("%d\t", *(inodelist + i));
-			printf("%d byte  ", inode.size);
-			for (int j = i * 8; j < i * 8 + 7; j++)
-			{
-				printf("%c", *(data_block.contents + j));
-			}
-			printf("\n");
-		}
-		free(inodelist);
-	}
-
-	if(workingInodeList.single_indirect_address != 0){
-		for (int i = 1; i <= indirect_point_cnt; i++)
-		{
-			DataBlock data_block = getDataBlock(*(cntDataBlock.contents+i));
+			DataBlock data_block = getDataBlock(*(workingInodeList.direct_address+i));
 
 			struct tm *pt;
 			int *inodelist = NULL;
@@ -293,6 +282,43 @@ void myls(char **commands)
 				printf("\n");
 			}
 			free(inodelist);
+		}
+
+		if(workingInodeList.single_indirect_address != 0){
+			for (int i = 1; i <= indirect_point_cnt; i++)
+			{
+				DataBlock data_block = getDataBlock(*(cntDataBlock.contents+i));
+
+				struct tm *pt;
+				int *inodelist = NULL;
+
+				int cnt = 0;
+				for (int i = 0; i < sizeof(DataBlock); i++)
+				{
+					if ((i + 1) % 8 == 0 && *(data_block.contents+i) != 0)
+					{
+						cnt++;
+						inodelist = (int *)realloc(inodelist, sizeof(int) * cnt);
+						*(inodelist + (cnt - 1)) = *(data_block.contents + i);
+					}
+				}
+
+				for (int i = 0; i < cnt; i++)
+				{
+					InodeList inode = getInodeList(*(inodelist + i));
+					pt = localtime(&inode.access_date);
+					printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
+					printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
+					printf("%d\t", *(inodelist + i));
+					printf("%d byte  ", inode.size);
+					for (int j = i * 8; j < i * 8 + 7; j++)
+					{
+						printf("%c", *(data_block.contents + j));
+					}
+					printf("\n");
+				}
+				free(inodelist);
+			}
 		}
 	}
 }
