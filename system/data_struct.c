@@ -14,6 +14,7 @@ int depth_working_directory;
 // inode : inode 가 가리키는 datablock 들
 // 현재 wokring 디렉토리에 문자를 쓰도록 설계됨
 void writeDirectory(char *name, int inode, int type)
+void writeDirectory(char *name, int inode, int type)
 {
 	InodeList inode_list = getInodeList(inode);	
 	time_t curTime;
@@ -25,14 +26,17 @@ void writeDirectory(char *name, int inode, int type)
 	if (indirectAddressUse)
 	{
 		if(inode_list.single_indirect_address == 0){ // 처음 indirect_address 에 저장할 때, indirect_address으로 사용할 데이터 block 찾기
+		if(inode_list.single_indirect_address == 0){ // 처음 indirect_address 에 저장할 때, indirect_address으로 사용할 데이터 block 찾기
 			useDataBlockInode = findEmptyDataBlock();
 			inode_list.single_indirect_address = useDataBlockInode;			
 			setSuperBlock(SIZE_INODELIST + useDataBlockInode + 1, 1);
 		}
 		else{
 			useDataBlockInode = inode_list.single_indirect_address; // 이미 indirect_address 가 지정되어 있을 때
+			useDataBlockInode = inode_list.single_indirect_address; // 이미 indirect_address 가 지정되어 있을 때
 		}
 
+		if(inode_list.size%256 == 0){ // 새로운 데이터 블럭을 생성해야 할 때
 		if(inode_list.size%256 == 0){ // 새로운 데이터 블럭을 생성해야 할 때
 			indirectAddress = findEmptyDataBlock();
 			inode_list.reference_count += 1;
@@ -42,11 +46,13 @@ void writeDirectory(char *name, int inode, int type)
 
 		DataBlock db = getDataBlock(useDataBlockInode);
 		indirectAddress = db.contents[db.contents[0]]; // indirect_address은 데이터블럭의 [0]이 크기를 저장함
+		indirectAddress = db.contents[db.contents[0]]; // indirect_address은 데이터블럭의 [0]이 크기를 저장함
 
 		writeDirectoryDataBlock(name, indirectAddress, (inode_list.size)%256);
 		setInodeList(inode, type, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
 		
 	}
+	else // directs 주소에 저장할 때 
 	else // directs 주소에 저장할 때 
 	{
 		if(inode_list.size%256 == 0){
