@@ -1,6 +1,6 @@
 # 2024-2-Programing
 
-- gcc -o commands2 commands2.c data_struct.c io_stream.c shell.c fs_status_print.c && ./commands2 
+- gcc -o main my_dir_commands.c system/data_struct.c system/io_stream.c shell.c hamjoohyuk_commands.c
 
 파일들의 include, defnie, struct, union, function 
 
