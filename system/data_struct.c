@@ -14,6 +14,7 @@ int depth_working_directory;
 // inode : inode 가 가리키는 datablock 들
 // 현재 wokring 디렉토리에 문자를 쓰도록 설계됨
 void writeDirectory(char *name, int inode, int type)
+void writeDirectory(char *name, int inode, int type)
 {
 	InodeList inode_list = getInodeList(inode);	
 	time_t curTime;
@@ -25,14 +26,17 @@ void writeDirectory(char *name, int inode, int type)
 	if (indirectAddressUse)
 	{
 		if(inode_list.single_indirect_address == 0){ // 처음 indirect_address 에 저장할 때, indirect_address으로 사용할 데이터 block 찾기
+		if(inode_list.single_indirect_address == 0){ // 처음 indirect_address 에 저장할 때, indirect_address으로 사용할 데이터 block 찾기
 			useDataBlockInode = findEmptyDataBlock();
 			inode_list.single_indirect_address = useDataBlockInode;			
 			setSuperBlock(SIZE_INODELIST + useDataBlockInode + 1, 1);
 		}
 		else{
 			useDataBlockInode = inode_list.single_indirect_address; // 이미 indirect_address 가 지정되어 있을 때
+			useDataBlockInode = inode_list.single_indirect_address; // 이미 indirect_address 가 지정되어 있을 때
 		}
 
+		if(inode_list.size%256 == 0){ // 새로운 데이터 블럭을 생성해야 할 때
 		if(inode_list.size%256 == 0){ // 새로운 데이터 블럭을 생성해야 할 때
 			indirectAddress = findEmptyDataBlock();
 			inode_list.reference_count += 1;
@@ -42,11 +46,13 @@ void writeDirectory(char *name, int inode, int type)
 
 		DataBlock db = getDataBlock(useDataBlockInode);
 		indirectAddress = db.contents[db.contents[0]]; // indirect_address은 데이터블럭의 [0]이 크기를 저장함
+		indirectAddress = db.contents[db.contents[0]]; // indirect_address은 데이터블럭의 [0]이 크기를 저장함
 
 		writeDirectoryDataBlock(name, indirectAddress, (inode_list.size)%256);
-		setInodeList(working_directory->my_inode_number, type, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
+		setInodeList(inode, type, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
 		
 	}
+	else // directs 주소에 저장할 때 
 	else // directs 주소에 저장할 때 
 	{
 		if(inode_list.size%256 == 0){
@@ -57,7 +63,7 @@ void writeDirectory(char *name, int inode, int type)
 		}
 
 		writeDirectoryDataBlock(name, inode_list.direct_address[inode_list.reference_count - 1], inode_list.size%256);
-		setInodeList(working_directory->my_inode_number, type, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
+		setInodeList(inode, type, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
 	}
 }
 
@@ -65,29 +71,206 @@ int getNowWorkingDirectoryInodeNumber() {
 	return working_directory->my_inode_number;
 }
 
-unsigned char findDictoryNameToInode(char *argument)
+// return 값은 최종 디렉토리 inode, finalStr에 값이 마지막 이름이 담김, 존재하지 않은 파일이나, 디렉토리만 사용가능
+// ../../../a -> 라면 ../../../ 의 디렉토리 indoe가 return, finalStr에는 a 문자열이 담김 
+// argument : 인자값 
+// tmpStr : 빈 배열
+unsigned char findNameToBaseInode(char *argument, unsigned char *tmpPath, unsigned char *tmpFinalStr)
 {
-	char names[8] = {
-		0,
-	};
-	strcpy(names, argument);
-	DataBlock data_block = getDataBlock(working_directory->my_inode_number - 1);
-	InodeList inodelist = getInodeList(working_directory->my_inode_number);
+	unsigned char *path = NULL;
+	unsigned char *ptmp = NULL;
+	unsigned char *finalStr = NULL;
+	bool flag = false;
 
-	char compareStr[8];
+	if(argument == NULL){
+		return 0;
+	}
 
-	for (int i = 2; i < (inodelist.size) / 8; i++)
-	{
-		memset(compareStr, 0, sizeof(compareStr));
-		for (int j = 0; j < 7; j++)
+	path = (unsigned char *)malloc(sizeof(unsigned char) * strlen(argument));
+	ptmp = (unsigned char *)malloc(sizeof(unsigned char) * strlen(argument));
+	strcpy(path, argument);
+	strcpy(ptmp, argument);
+
+	for (char *p = strtok(ptmp, "/"); p!=NULL; p = strtok(NULL, "/")){
+		finalStr = (unsigned char *)realloc(finalStr, sizeof(unsigned char) * strlen(p));
+		strcpy(finalStr, p);
+	}
+
+	for(int i = 0;  i < strlen(finalStr); i++){
+		path[strlen(argument) - i - 1] = 0;
+	}
+
+	strcpy(tmpPath, path);
+
+	chainedDirectory *virtual_working_directory;
+	int virtual_depth_working_directory = depth_working_directory;
+	copyWorkingDirectory(&virtual_working_directory);
+	
+	if(cd(&virtual_working_directory, &virtual_depth_working_directory, path) == 0){
+		free(path);
+		free(ptmp);
+		free(finalStr);
+		return 0;
+	}
+
+	free(path);
+	free(ptmp);
+	
+	if(strcmp(finalStr, "..") == 0){
+		free(finalStr);
+		return 0;
+	}
+	else if(strcmp(finalStr, ".") == 0){
+		free(finalStr);
+		return 0;
+	}
+	
+	if(strlen(finalStr) > 7){
+		free(finalStr);
+		return 0;
+	}
+	
+	strcpy(tmpFinalStr, finalStr);
+	free(finalStr);
+
+	return virtual_working_directory->my_inode_number;
+}
+
+unsigned char findNameToInode(char *argument)
+{
+	unsigned char *path = NULL;
+	unsigned char *ptmp = NULL;
+	unsigned char *finalStr = NULL;
+	bool flag = false;
+	bool first = false;
+
+	if(argument == NULL){
+		return 0;
+	}
+
+	path = (unsigned char *)malloc(sizeof(unsigned char) * strlen(argument));
+	ptmp = (unsigned char *)malloc(sizeof(unsigned char) * strlen(argument));
+	strcpy(path, argument);
+	strcpy(ptmp, argument);
+
+	for (char *p = strtok(ptmp, "/"); p!=NULL; p = strtok(NULL, "/")){
+		finalStr = (unsigned char *)realloc(finalStr, sizeof(unsigned char) * strlen(p));
+		strcpy(finalStr, p);
+	}
+	
+	for(int i = 0;  i < strlen(finalStr); i++){
+		path[strlen(argument) - i - 1] = 0;
+	}
+
+	chainedDirectory *virtual_working_directory;
+	int virtual_depth_working_directory = depth_working_directory;
+	copyWorkingDirectory(&virtual_working_directory);
+
+	if(cd(&virtual_working_directory, &virtual_depth_working_directory, path) == 0){
+		free(path);
+		free(ptmp);
+		free(finalStr);
+		return 0;
+	}
+
+	free(path);
+	free(ptmp);
+	
+	if(strcmp(finalStr, "..") == 0){
+		free(finalStr);
+		return virtual_working_directory->parent->my_inode_number;
+	}
+	else if(strcmp(finalStr, ".") == 0){
+		free(finalStr);
+		return virtual_working_directory->my_inode_number;
+	}
+	
+	if(strlen(finalStr) > 7){
+		free(finalStr);
+		return 0;
+	}
+	else if(finalStr == NULL){
+		free(finalStr);
+		return 0;
+	}
+
+	InodeList inodelist = getInodeList(virtual_working_directory->my_inode_number);
+	DataBlock cntDataBlock;
+	int indirect_point_cnt = 0;
+	if(inodelist.single_indirect_address != 0){
+		cntDataBlock = getDataBlock(inodelist.single_indirect_address);
+		indirect_point_cnt = *(cntDataBlock.contents);
+	}
+
+	char compareStr[8] = {0,};
+	for(int i = 0; i < inodelist.reference_count - indirect_point_cnt; i++){
+		DataBlock data_block = getDataBlock(*(inodelist.direct_address+i));
+
+		int cnt = 0;
+		int *inodes = NULL;
+		for (int i = 0; i < sizeof(DataBlock); i++)
 		{
-			compareStr[j] = data_block.contents[i * 8 + j];
+			if ((i + 1) % 8 == 0 && *(data_block.contents+i) != 0)
+			{
+				cnt++;
+				inodes = (int *)realloc(inodes, sizeof(int) * cnt);
+				*(inodes + (cnt - 1)) = *(data_block.contents + i);
+			}
 		}
-		if (strcmp(compareStr, names) == 0)
+
+		for(int i = 1; i < cnt; i++){
+			memset(compareStr, 0, sizeof(compareStr));
+			for (int j = 0; j < 7; j++)
+			{
+				compareStr[j] = data_block.contents[i * 8 + j];
+			}
+			if (strcmp(compareStr, finalStr) == 0)
+			{
+				free(finalStr);
+				free(inodes);
+				return data_block.contents[i * 8 + 7];
+			}
+		}
+
+		free(inodes);
+	}
+
+	if(inodelist.single_indirect_address != 0){
+		for (int i = 1; i <= indirect_point_cnt; i++)
 		{
-			return data_block.contents[i * 8 + 7];
+			DataBlock data_block = getDataBlock(*(cntDataBlock.contents+i));
+
+			int cnt = 0;
+			int *inodes = NULL;
+			for (int i = 0; i < sizeof(DataBlock); i++)
+			{
+				if ((i + 1) % 8 == 0 && *(data_block.contents+i) != 0)
+				{
+					cnt++;
+					inodes = (int *)realloc(inodes, sizeof(int) * cnt);
+					*(inodes + (cnt - 1)) = *(data_block.contents + i);
+				}
+			}
+
+			for(int i = 1; i < cnt; i++){
+				memset(compareStr, 0, sizeof(compareStr));
+				for (int j = 0; j < 7; j++)
+				{
+					compareStr[j] = data_block.contents[i * 8 + j];
+				}
+				if (strcmp(compareStr, finalStr) == 0)
+				{
+					free(finalStr);
+					free(inodes);
+					return data_block.contents[i * 8 + 7];
+				}
+			}
+
+			free(inodes);
 		}
 	}
+
+	free(finalStr);
 
 	return 0;
 }
