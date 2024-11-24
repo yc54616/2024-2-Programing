@@ -12,6 +12,45 @@ extern int depth_working_directory;
 /* It seems like _mycd */
 static void _Tree(unsigned char *, unsigned char, int, char *, int);
 
+void myrm(char **commands)
+{
+	char *argument = commands[1];
+
+	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	strcpy(arg, argument);
+
+	int inode_number = findNameToInode(arg);
+
+	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
+	
+	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
+
+	if (inode_number != 0)
+	{
+		printf("FIND!!\n");
+		printf("%d\n", inode_number);
+	}
+	else{
+		printf("myrm: 제거할 수 없습니다: 그런 파일이 없습니다\n");
+		free(arg);
+		free(path);
+		free(finalStr);
+		return;
+	}
+
+	setSuperBlock(inode_number, 0);
+	setSuperBlock(SIZE_INODELIST + inode_number, 0);
+
+	deleteDirectory(finalStr, inode_number_base);
+
+	printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
+	
+	free(arg);
+	free(path);
+	free(finalStr);
+}
+
 void mymkfs(char **commands)
 {
 	char check[100] = "y";
@@ -52,12 +91,15 @@ void mytouch(char **commands)
 {
 	char *argument = commands[1];
 
-	int inode_number = findNameToInode(argument);
+	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	strcpy(arg, argument);
+
+	int inode_number = findNameToInode(arg);
 
 	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
 	
-	findNameToBaseInode(argument, path, finalStr);
+	findNameToBaseInode(arg, path, finalStr);
 
 	if (inode_number != 0)
 	{
@@ -99,6 +141,7 @@ void mytouch(char **commands)
 		writeDirectory(finalStr, virtual_working_directory->my_inode_number, DIRECTORY);
 	}
 
+	free(arg);
 	free(path);
 	free(finalStr);
 }
@@ -107,7 +150,10 @@ void mymkdir(char **commands)
 {
 	char *argument = commands[1];
 
-	if(findNameToInode(argument) != 0){
+	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	strcpy(arg, argument);
+
+	if(findNameToInode(arg) != 0){
 		printf("mymkdir: 디렉터리를 만들 수 없습니다: 파일이 있습니다\n");
 		return;
 	}
@@ -115,12 +161,13 @@ void mymkdir(char **commands)
 	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
 	
-	int inode_number = findNameToBaseInode(argument, path, finalStr);
+	int inode_number = findNameToBaseInode(arg, path, finalStr);
 
 	printf("path : %s, finalStr : %s\n", path, finalStr);
 
 	if(inode_number == 0){
 		printf("mymkdir: 디렉터리를 만들 수 없습니다: 그런 파일이나 디렉터리가 없습니다\n");
+		free(arg);
 		free(path);
 		free(finalStr);
 		return;
@@ -162,6 +209,7 @@ void mymkdir(char **commands)
 
 	writeDirectory(finalStr, inode_number, DIRECTORY);
 
+	free(arg);
 	free(path);
 	free(finalStr);
 }
@@ -246,7 +294,7 @@ void myls(char **commands)
 		int indirect_point_cnt = 0;
 		if(workingInodeList.single_indirect_address != 0){
 			cntDataBlock = getDataBlock(workingInodeList.single_indirect_address);
-			indirect_point_cnt = *(cntDataBlock.contents);
+			indirect_point_cnt = *(cntDataBlock.contents); // == cntDataBlock.contents[0]
 		}
 
 		for (int i = 0; i < workingInodeList.reference_count - indirect_point_cnt; i++)

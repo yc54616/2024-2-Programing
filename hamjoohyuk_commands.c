@@ -158,24 +158,24 @@ void myshowfile(int num1, int num2, char* file_name) {
     printf("\n");
 }
 
-void myrm(char** commands) {
-    if(commands[1] == NULL) {
-        printf("인자가 불충분합니다.");
-        return ;
-    }
-    else if(strlen(commands[1]) > 7) {
-        printf("파일 이름이 너무 깁니다."); //임시
-        return ;
+// void myrm(char** commands) {
+//     if(commands[1] == NULL) {
+//         printf("인자가 불충분합니다.");
+//         return ;
+//     }
+//     else if(strlen(commands[1]) > 7) {
+//         printf("파일 이름이 너무 깁니다."); //임시
+//         return ;
 
-    }
-    char* file_name = commands[1];
-    int now_working_directory_inode_number = getNowWorkingDirectoryInodeNumber();
-    SuperBlock super_block = getSuperBlock();
-	InodeList inode_list;
-    DataBlock data_block;
-    inode_list = getInodeList(now_working_directory_inode_number);
-    data_block = getDataBlock(inode_list.direct_address[0]);
-}   
+//     }
+//     char* file_name = commands[1];
+//     int now_working_directory_inode_number = getNowWorkingDirectoryInodeNumber();
+//     SuperBlock super_block = getSuperBlock();
+// 	InodeList inode_list;
+//     DataBlock data_block;
+//     inode_list = getInodeList(now_working_directory_inode_number);
+//     data_block = getDataBlock(inode_list.direct_address[0]);
+// }   
 
 void mycpfrom(char** commands) {
     char* host_source_file;
