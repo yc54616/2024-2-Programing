@@ -40,6 +40,18 @@ void writeIndirectDataBlock(int address, int datablockIndex){
 	setDataBlock(datablockIndex, data_Block.contents);
 }
 
+// datablockIndex : datablock 인덱스
+// startIndex : 지워질 8바이트 시작 주소
+void deleteDirectoryDataBlock(int datablockIndex, int startIndex){
+	DataBlock data_Block = getDataBlock(datablockIndex);
+	//unsigned char test[SIZE_DATABLOCK] = dBlock.contents[SIZE_DATABLOCK];
+	int i;
+	for(i = 0; i < 8; i++){
+		data_Block.contents[i+startIndex] = 0;
+	}
+	setDataBlock(datablockIndex, data_Block.contents);
+}
+
 // name : 디렉토리 이름, 마지막 바이트에는 가리키는 inode ex) lo     7
 // datablockIndex : datablock 인덱스
 // startIndex : name이 써질 datablock 안에 index (max=>256) 8씩 띄어져서 저장됨
@@ -161,6 +173,34 @@ void setSuperBlock(int bitIndex, bool bit)
 }
 
 // index : inode index
+void initInodeList(int index) // 1~128
+{																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
+	FILE *file;
+	int i;
+	file = fopen(FILENAME, "rb+");
+	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
+	fseek(file, SIZE_SUPERBLOCK, SEEK_CUR);
+	// 1 -> 0,0
+	// 2 -> 0,1
+	// 8 -> 0,7
+	// 128 -> 15,7
+	InodeList in;
+	in.file_mode = 0;
+	in.access_date = 0;
+	in.birth_date = 0;
+	in.size = 0;
+	in.reference_count = 0;
+	for (i = 0; i < 8; i++)
+		in.direct_address[i] = 0;
+	in.single_indirect_address = 0;
+
+	fseek(file, sizeof(InodeList) * (index - 1), SEEK_CUR);
+	fwrite(&in, sizeof(in), 1, file);
+
+	fclose(file);
+}
+
+// index : inode index
 // type: directory=1, file=0
 // dAndI: Direct=0, Single Indirect=1
 // date: date
@@ -190,6 +230,29 @@ void setInodeList(int index, bool file_mode, time_t access_date, time_t birth_da
 
 	fseek(file, sizeof(InodeList) * (index - 1), SEEK_CUR);
 	fwrite(&in, sizeof(in), 1, file);
+
+	fclose(file);
+}
+
+// address : datablock address
+void initDataBlock(int address) // 1~128
+{																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
+	FILE *file;
+	file = fopen(FILENAME, "rb+");
+	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
+	fseek(file, SIZE_SUPERBLOCK, SEEK_CUR);
+	fseek(file, SIZE_INODELIST * sizeof(InodeList), SEEK_CUR);
+	// 1 -> 0,0
+	// 2 -> 0,1
+	// 8 -> 0,7
+	// 128 -> 15,7
+	DataBlock db;
+	for(int i = 0; i < SIZE_DATABLOCK; i++){
+		db.contents[i] = 0;
+	}
+	
+	fseek(file, sizeof(DataBlock) * address, SEEK_CUR);
+	fwrite(&db, sizeof(db), 1, file);
 
 	fclose(file);
 }
