@@ -12,6 +12,55 @@ extern int depth_working_directory;
 /* It seems like _mycd */
 static void _Tree(unsigned char *, unsigned char, int, char *, int);
 
+void myrm(char **commands)
+{
+	char *argument = commands[1];
+
+	int inode_number = findNameToInode(argument);
+
+	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
+	
+	int inode_number_base = findNameToBaseInode(argument, path, finalStr);
+
+	if (inode_number != 0)
+	{
+		printf("FIND!!\n");
+		printf("%d\n", inode_number);
+	}
+	else{
+		printf("myrm: 제거할 수 없습니다: 그런 파일이 없습니다\n");
+		free(path);
+		free(finalStr);
+		return;
+	}
+
+	InodeList inodeList = getInodeList(inode_number_base);
+	DataBlock cntDataBlock;
+	int indirect_point_cnt = 0;
+	if(inodeList.single_indirect_address != 0){
+		cntDataBlock = getDataBlock(inodeList.single_indirect_address);
+		indirect_point_cnt = *(cntDataBlock.contents);
+	}
+
+	printf("direct_address : ");
+	for (int i = 0; i < inodeList.reference_count - indirect_point_cnt; i++){
+		printf("%d ", inodeList.direct_address[i]);
+	}
+
+	if(inodeList.single_indirect_address != 0){
+		printf("\nsingle_indirect_address : ");
+		for (int i = 1; i <= indirect_point_cnt; i++){
+			printf("%d ", *(cntDataBlock.contents+i));
+		}
+	}
+
+	printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
+	
+	free(path);
+	free(finalStr);
+}
+
 void mymkfs(char **commands)
 {
 	char check[100] = "y";
