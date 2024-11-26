@@ -12,6 +12,12 @@ extern int depth_working_directory;
 /* It seems like _mycd */
 static void _Tree(unsigned char *, unsigned char, int, char *, int);
 
+/* It's for qsort */
+int _compare_files(const void *file1, const void *file2)
+{
+	return strncmp((unsigned char *)file1, (unsigned char *)file2, 7);
+}
+
 void myrm(char **commands)
 {
 	char *argument = commands[1];
@@ -253,13 +259,18 @@ void myrmdir(char **commands)
 void myls(char **commands)
 {
 	char *argument = *(commands+1);
+	unsigned char *arg = NULL;
+	unsigned char(*properties_of_children)[8] = NULL;
 
 	bool thisIsFile = false;
 
 	int getInode = working_directory->my_inode_number;
 
 	if(argument != NULL){
-		int f = findNameToInode(argument);
+		arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+		strcpy(arg, argument);
+
+		int f = findNameToInode(arg);
 		if(f == 0){
 			printf("myls: '%s'에 접근할 수 없음: 그런 파일이나 디렉터리가 없습니다\n", argument);
 			return;
@@ -276,17 +287,18 @@ void myls(char **commands)
 		InodeList inode = getInodeList(getInode);
 		struct tm *pt = localtime(&inode.access_date);
 		unsigned char *str = NULL;
-		printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
+		printf("%02d/%02d/%02d %02d:%02d:%02d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
 		printf("%s\t", inode.file_mode == DIRECTORY ? "directory" : "file");
 		printf("%d\t", getInode);
 		printf("%d byte  ", inode.size);
-		for (char *p = strtok(argument, "/"); p!=NULL; p = strtok(NULL, "/")){
+		for (char *p = strtok(arg, "/"); p!=NULL; p = strtok(NULL, "/")){
 			str = (unsigned char *)realloc(str, sizeof(unsigned char) * strlen(p));
 			strcpy(str, p);
 		}
 		printf("%s", str);
 		printf("\n");
 		free(str);
+		free(arg);
 	}
 	else{
 		InodeList workingInodeList = getInodeList(getInode);
@@ -297,77 +309,58 @@ void myls(char **commands)
 			indirect_point_cnt = *(cntDataBlock.contents); // == cntDataBlock.contents[0]
 		}
 
+		int count_files = workingInodeList.size / 8;
+		properties_of_children = (unsigned char(*)[8])calloc(sizeof(unsigned char(*)[8]), count_files); // We will make this sorted.
+		int count_listed_files = 0;
+
+		printf("count_files : %d\n", count_files);
+
 		for (int i = 0; i < workingInodeList.reference_count - indirect_point_cnt; i++)
 		{
 			DataBlock data_block = getDataBlock(*(workingInodeList.direct_address+i));
 
-			struct tm *pt;
-			int *inodelist = NULL;
-
-			int cnt = 0;
-			for (int i = 0; i < sizeof(DataBlock); i++)
+			for (int j = 0; j < SIZE_DATABLOCK/8; j++)
 			{
-				if ((i + 1) % 8 == 0 && *(data_block.contents+i) != 0)
-				{
-					cnt++;
-					inodelist = (int *)realloc(inodelist, sizeof(int) * cnt);
-					*(inodelist + (cnt - 1)) = *(data_block.contents + i);
-				}
+				if(*(*(data_block.subfiles+j)+7) == 0)
+					break;
+				strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);
+				*(*(properties_of_children + count_listed_files) + 7) = data_block.subfiles[j][7];
+				count_listed_files++;
 			}
-
-			for (int i = 0; i < cnt; i++)
-			{
-				InodeList inode = getInodeList(*(inodelist + i));
-				pt = localtime(&inode.access_date);
-				printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
-				printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
-				printf("%d\t", *(inodelist + i));
-				printf("%d byte  ", inode.size);
-				for (int j = i * 8; j < i * 8 + 7; j++)
-				{
-					printf("%c", *(data_block.contents + j));
-				}
-				printf("\n");
-			}
-			free(inodelist);
 		}
-
 		if(workingInodeList.single_indirect_address != 0){
 			for (int i = 1; i <= indirect_point_cnt; i++)
 			{
 				DataBlock data_block = getDataBlock(*(cntDataBlock.contents+i));
 
-				struct tm *pt;
-				int *inodelist = NULL;
-
-				int cnt = 0;
-				for (int i = 0; i < sizeof(DataBlock); i++)
+				for (int j = 0; j < SIZE_DATABLOCK/8; j++)
 				{
-					if ((i + 1) % 8 == 0 && *(data_block.contents+i) != 0)
-					{
-						cnt++;
-						inodelist = (int *)realloc(inodelist, sizeof(int) * cnt);
-						*(inodelist + (cnt - 1)) = *(data_block.contents + i);
-					}
+					if(*(*(data_block.subfiles+j)+7) == 0)
+						break;
+					strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);
+					*(*(properties_of_children + count_listed_files) + 7) = data_block.subfiles[j][7];
+					count_listed_files++;
 				}
-
-				for (int i = 0; i < cnt; i++)
-				{
-					InodeList inode = getInodeList(*(inodelist + i));
-					pt = localtime(&inode.access_date);
-					printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
-					printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
-					printf("%d\t", *(inodelist + i));
-					printf("%d byte  ", inode.size);
-					for (int j = i * 8; j < i * 8 + 7; j++)
-					{
-						printf("%c", *(data_block.contents + j));
-					}
-					printf("\n");
-				}
-				free(inodelist);
 			}
 		}
+		qsort(properties_of_children, count_files, sizeof(unsigned char *), _compare_files);
+
+		for (int i = 0; i < count_files; i++)
+		{
+			InodeList inode = getInodeList(*(*(properties_of_children+i)+7));
+			struct tm *pt = localtime(&inode.access_date);
+			printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
+			printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
+			printf("%d\t", *(*(properties_of_children+i)+7));
+			printf("%d byte  ", inode.size);
+			for (int j = 0; j < 7; j++)
+			{
+				printf("%c", *(*(properties_of_children+i)+j));
+			}
+			printf("\n");
+		}
+
+		// free(properties_of_children);
 	}
 }
 
@@ -462,12 +455,6 @@ void mytree(char **commands)
 			printf("Such directory doesn'y exist\n");
 		free(path);
 	}
-}
-
-/* It's for qsort */
-int _compare_files(const void *file1, const void *file2)
-{
-	return strncmp((unsigned char *)file1, (unsigned char *)file2, 7);
 }
 
 static void _Tree(unsigned char *name, unsigned char inode_number, int depth, char *inherited_string, int last_file) // It may be frequently and reculsively called.

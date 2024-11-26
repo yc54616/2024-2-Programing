@@ -25,7 +25,7 @@ void deleteDirectory(char *name, int inode)
 
 	unsigned char endStr[8] = {0,};
 	
-	bool indirectAddressUse = (inodeList.reference_count > 1) ? true : false;
+	bool indirectAddressUse = (inodeList.reference_count > SIZE_DIRECT_POINTER) ? true : false;
 
 	if (indirectAddressUse)
 	{
@@ -158,7 +158,7 @@ void writeDirectory(char *name, int inode, int type)
 	time(&curTime);
 	int useDataBlockInode, indirectAddress;
 
-	bool indirectAddressUse = ((inode_list.reference_count > 1) || (inode_list.reference_count == 1 && inode_list.size%256 == 0)) ? true : false;
+	bool indirectAddressUse = ((inode_list.reference_count > SIZE_DIRECT_POINTER) || (inode_list.reference_count == SIZE_DIRECT_POINTER && inode_list.size%256 == 0)) ? true : false;
 
 	if (indirectAddressUse)
 	{
