@@ -48,6 +48,8 @@ void myrm(char **commands)
 	setSuperBlock(inode_number, 0);
 	setSuperBlock(SIZE_INODELIST + inode_number, 0);
 
+	deleteInDirectory(inode_number);
+
 	deleteDirectory(finalStr, inode_number_base);
 
 	printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);

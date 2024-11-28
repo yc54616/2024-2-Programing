@@ -9,6 +9,35 @@
 chainedDirectory *working_directory;
 int depth_working_directory;
 
+// inode : FILE inode address -> datablock만 지움
+void deleteInDirectory(int inode){
+	InodeList inodeList = getInodeList(inode);
+	DataBlock cntDataBlock;
+	int indirect_point_cnt = 0;
+	if(inodeList.single_indirect_address != 0){
+		cntDataBlock = getDataBlock(inodeList.single_indirect_address);
+		indirect_point_cnt = *(cntDataBlock.contents);
+	}
+
+	for (int i = 0; i < inodeList.reference_count - indirect_point_cnt; i++)
+	{
+		initDataBlock(*(inodeList.direct_address+i));
+	}
+
+	bool indirectAddressUse = (inodeList.reference_count > SIZE_DIRECT_POINTER) ? true : false;
+
+	if (indirectAddressUse)
+	{
+		if(inodeList.single_indirect_address != 0){
+			for (int i = 1; i <= indirect_point_cnt; i++)
+			{
+				initDataBlock(*(cntDataBlock.contents+i));
+			}
+		}
+		initDataBlock(inodeList.single_indirect_address);
+	}
+}
+
 // inode 안에 directs, single_indirect_address 돌며 name 지우기
 // 중간의 값을 지우면 데이터 당겨주기
 void deleteDirectory(char *name, int inode)
