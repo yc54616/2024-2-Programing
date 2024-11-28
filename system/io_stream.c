@@ -153,7 +153,7 @@ void setSuperBlock(int bitIndex, bool bit)
 // reference_count : 다이렉트 포인터, 인다이렉트 포인터  
 void setInodeList(int index, bool file_mode, time_t access_date, time_t birth_date, unsigned int size, unsigned char reference_count, unsigned char *direct_address, unsigned char single_indirect_address) // 1~128
 {																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
-	FILE *file;
+FILE *file;
 	int i;
 	file = fopen(FILENAME, "rb+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
@@ -168,17 +168,14 @@ void setInodeList(int index, bool file_mode, time_t access_date, time_t birth_da
 	in.birth_date = birth_date;
 	in.size = size;
 	in.reference_count = reference_count;
-	if (reference_count != 9){
-		for (i = 0; i < reference_count; i++)
-			in.direct_address[i] = direct_address[i];
-	}
-	else
-		in.single_indirect_address = single_indirect_address;
+	for (i = 0; i < 8; i++)
+		in.direct_address[i] = direct_address[i];
+	in.single_indirect_address = single_indirect_address;
 
 	fseek(file, sizeof(InodeList) * (index - 1), SEEK_CUR);
 	fwrite(&in, sizeof(in), 1, file);
-
 	fclose(file);
+
 }
 
 // address : datablock address

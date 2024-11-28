@@ -20,7 +20,8 @@ int getNeededDirectAdressNumber(char* entire_contents) {
     return strlen(entire_contents) / 256 + 1;
 }
 
-int allocateInodeForNewFiles(char* new_file_name, int direct_adress_number, int content_size) {
+
+int allocateInodeForNewFiles(char* new_file_name, int direct_adress_number, int content_size) { //bigbig, 9, 2050
     SuperBlock super_block = getSuperBlock();
 	InodeList inode_list;
     DataBlock data_block;
@@ -34,12 +35,20 @@ int allocateInodeForNewFiles(char* new_file_name, int direct_adress_number, int 
     time_t cur_time;
 	time(&cur_time);
 
-    for(int i = 0; i < direct_adress_number; i++) {
+    for(int i = 0; i < direct_adress_number &&  i < 8; i++) {
         new_data_block_index[i] = findEmptyDataBlock();
         setSuperBlock(128 + new_data_block_index[i] + 1, 1);
     }
+    
+    if(direct_adress_number < 9) {
+        setInodeList(new_inode_list_index, 0, cur_time, cur_time, content_size, direct_adress_number, new_data_block_index, 0);
+    }
+    else {
+        unsigned new_single_indirect_block = allocateSingleIndirectBlock();
+        setInodeList(new_inode_list_index, 0, cur_time, cur_time, content_size, direct_adress_number, new_data_block_index, new_single_indirect_block);
+        inode_list = getInodeList(new_inode_list_index);
+    }
 
-    setInodeList(new_inode_list_index, 0, cur_time, cur_time, content_size, direct_adress_number, new_data_block_index, 0);
     strcpy(new_file_name_for_save, new_file_name);
     for(int i = 0; i < 7 - strlen(new_file_name); i++) strcat(new_file_name_for_save, "\0");
     inode_list = getInodeList(now_working_directory_inode_number);
@@ -47,6 +56,12 @@ int allocateInodeForNewFiles(char* new_file_name, int direct_adress_number, int 
     writeDirectoryDataBlock(new_file_name_for_save, inode_list.direct_address[0], inode_list.size);
     setInodeList(now_working_directory_inode_number, 1, cur_time, inode_list.birth_date, inode_list.size+8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
     return new_inode_list_index;
+}
+
+int allocateSingleIndirectBlock() {
+    unsigned char new_single_indirect_block_adress = findEmptyDataBlock();
+    setSuperBlock(SIZE_INODELIST + new_single_indirect_block_adress + 1, 1);
+    return new_single_indirect_block_adress;
 }
 
 void writeFileContents(char* entire_contents, int inode_list_adress, int direct_adress_number) { 
@@ -57,11 +72,13 @@ void writeFileContents(char* entire_contents, int inode_list_adress, int direct_
     unsigned char divided_contents_but_it_will_be_replaced_because_it_has_error_and_i_love_long_long_variable_name[8][256] = {0};  // 8개의 256바이트 배열 선언(Direct Block)
     unsigned char new_contents[256] = {0};
 
-    for (int i = 0; i < direct_adress_number && i * 256 < strlen(entire_contents); i++) {  // 256바이트씩 나눠서 배열에 복사
-        strncpy(divided_contents_but_it_will_be_replaced_because_it_has_error_and_i_love_long_long_variable_name[i], entire_contents + i * 256, 256);
+    int copy_count = 0;
+    for (copy_count; copy_count < direct_adress_number && copy_count * 256 < strlen(entire_contents) && copy_count < 8; copy_count++) {  // 256바이트씩 나눠서 배열에 복사
+        strncpy(divided_contents_but_it_will_be_replaced_because_it_has_error_and_i_love_long_long_variable_name[copy_count], entire_contents + copy_count * 256, 256);
     }
 
-    for(int i = 0; i < direct_adress_number; i++) {
+
+    for(int i = 0; i < direct_adress_number && i < 8; i++) {
         data_block_adress[i] = inode_list.direct_address[i];
         if(divided_contents_but_it_will_be_replaced_because_it_has_error_and_i_love_long_long_variable_name[i] != NULL && strlen(divided_contents_but_it_will_be_replaced_because_it_has_error_and_i_love_long_long_variable_name[i]) != 0) {
                 for(int j = 0; j < 256; j++) {
@@ -70,6 +87,42 @@ void writeFileContents(char* entire_contents, int inode_list_adress, int direct_
                 setDataBlock(data_block_adress[i], new_contents);
                 data_block = getDataBlock(data_block_adress[i]); 
                 continue;
+        }
+    }
+    if(direct_adress_number > 8) {
+        unsigned char divided_contents[256] = {0};
+        unsigned char contents_of_single_indirect_block[256] = {0};
+        int single_indirect_address = inode_list.single_indirect_address;
+        int needed_extra_datablock_count = 0;
+        int length = strlen(entire_contents);
+        length -= 2048;
+        while(length > 0) {
+            needed_extra_datablock_count++;
+            unsigned char new_data_block_adress_for_single_indirect_block = findEmptyDataBlock();
+            setSuperBlock(SIZE_INODELIST + new_data_block_adress_for_single_indirect_block + 1, 1);
+            contents_of_single_indirect_block[0] = needed_extra_datablock_count;
+            contents_of_single_indirect_block[needed_extra_datablock_count] = new_data_block_adress_for_single_indirect_block;
+            setDataBlock(single_indirect_address, contents_of_single_indirect_block);
+            data_block = getDataBlock(single_indirect_address);
+            printf("%d", single_indirect_address);
+            printf("after : %d", data_block.contents[1]);
+            int i = 0;
+            for(i = 0; i < 256; i++) {
+                if(*(entire_contents + copy_count * 256) == 0) break;
+            }
+            for(int j = i; j < 256 - i; j++) {
+                divided_contents[j] = 0;
+            }
+            //strncpy(divided_contents, entire_contents + copy_count * 256, i + 1);
+            for(int j = 0; j < i; j++) {
+                divided_contents[j] = entire_contents[copy_count * 256 + j];
+            }
+            for(int j = i; j < 256 - i; j++) {
+                divided_contents[j] = 0;
+            }
+            setDataBlock(new_data_block_adress_for_single_indirect_block, divided_contents);
+            copy_count++;
+            length -= 256;
         }
     }
 }
@@ -106,12 +159,43 @@ char getAllDirectAdressWithSourceFileName(char* source_file, int result_index) {
     return inode_list.direct_address[result_index];
 }
 
+int getInodeNumberWithSourceFileName(char* source_file) {
+    int now_working_directory_inode_number = getNowWorkingDirectoryInodeNumber();
+    int inode_number_of_file;
+    bool is_source_file_name_exist = false;
+    SuperBlock super_block = getSuperBlock();
+	InodeList inode_list;
+    DataBlock data_block;
+    inode_list = getInodeList(now_working_directory_inode_number);
+   
+    for(int i = 0; i < 8; i++) {
+        data_block = getDataBlock(inode_list.direct_address[i]);
+        for(int j = 0; j < 32; j++) {
+            for(int k = 0; k < 7; k++) {
+                if(source_file[k] == data_block.contents[j * 8 + k]) {
+                    if(k == 6) {
+                        inode_number_of_file == *(data_block.contents + (j * 8 + 7));
+                        is_source_file_name_exist = true;
+                    }
+                }
+                else break;
+            }
+        }
+    }
+
+    if(is_source_file_name_exist == false) {
+        return -1; //임시
+    }
+    
+    return inode_number_of_file;
+}
+
 char* getFileContentsWithSourceFileName(char* source_file, bool first_call) {
     int now_working_directory_inode_number = getNowWorkingDirectoryInodeNumber();
     int inode_number_of_file;
     char* file_name = (char*)malloc(sizeof(char) * 7);
     bool is_source_file_name_exist = false;
-    char* file_content = (char *)calloc(256 * 8, sizeof(char));
+    char* file_content = (char *)calloc(256 * 9, sizeof(char));
     SuperBlock super_block = getSuperBlock();
 	InodeList inode_list;
     DataBlock data_block;
@@ -152,7 +236,7 @@ char* getFileContentsWithSourceFileName(char* source_file, bool first_call) {
         }
     }
 
-        for(int i = 0; i < 8; i++) {
+    for(int i = 0; i < 8; i++) {
         data_block = getDataBlock(*(inode_list.direct_address + i));
         strcat(file_content, data_block.contents);
     }
@@ -161,9 +245,82 @@ char* getFileContentsWithSourceFileName(char* source_file, bool first_call) {
     return file_content;
 }
 
+char* getIndirectBlockContentsWithSourceFileName(char* source_file) {
+    int now_working_directory_inode_number = getNowWorkingDirectoryInodeNumber();
+    int inode_number_of_file = 0;
+    int number_of_indirect = 0;
+    bool is_source_file_name_exist = false;
+    SuperBlock super_block = getSuperBlock();
+	InodeList inode_list;
+    DataBlock data_block;
+        inode_list = getInodeList(now_working_directory_inode_number);
+    for(int i = 0; i < 8; i++) {
+        if(i > 0 && *(inode_list.direct_address + i) == 0) break;
+        data_block = getDataBlock(*(inode_list.direct_address + i));       
+        for(int j = 0; j < 32; j++) {
+            for(int k = 0; k < 7; k++) {
+                if(*(source_file + k) == *(data_block.contents + (j * 8 + k))) {
+                    if(k == 6) {
+                        inode_number_of_file =  *(data_block.contents + (j * 8 + k + 1));
+                        is_source_file_name_exist = true;
+                        break;
+                    }
+                }
+                else break;
+            }
+            if(is_source_file_name_exist) break;
+        }
+    }
+    inode_list = getInodeList(inode_number_of_file);
+    int single_indirect_adress = inode_list.single_indirect_address;
+    data_block = getDataBlock(single_indirect_adress);
+    int indirect_count = data_block.contents[0];
+    for(number_of_indirect; data_block.contents[number_of_indirect] != 0; number_of_indirect++) ;
+    char* indirect_content = (char *)calloc(256 * number_of_indirect + 1, sizeof(char));
+
+    for(int i = 1; i < number_of_indirect + 1; i++) {
+        int new_content = data_block.contents[i];
+        data_block = getDataBlock(new_content);
+        strcat(indirect_content, data_block.contents);
+        data_block = getDataBlock(single_indirect_adress);
+    }
+    return indirect_content;
+}
+
+int getUsingIndirectBlock(char* source_file) {
+    int now_working_directory_inode_number = getNowWorkingDirectoryInodeNumber();
+    int inode_number_of_file = 0;
+    int number_of_indirect = 0;
+    bool is_source_file_name_exist = false;
+    SuperBlock super_block = getSuperBlock();
+	InodeList inode_list;
+    DataBlock data_block;
+    inode_list = getInodeList(now_working_directory_inode_number);
+   
+    for(int i = 0; i < 8; i++) {
+        data_block = getDataBlock(inode_list.direct_address[i]);
+        for(int j = 0; j < 32; j++) {
+            for(int k = 0; k < 7; k++) {
+                if(source_file[k] == data_block.contents[j * 8 + k]) {
+                    if(k == 6) {
+                        inode_number_of_file == *(data_block.contents + (j * 8 + 7));
+                    }
+                }
+                else break;
+            }
+            
+        }
+    }
+    inode_list = getInodeList(inode_number_of_file);
+    int single_indirect_adress = inode_list.single_indirect_address;
+    data_block = getDataBlock(single_indirect_adress);
+    int indirect_count = data_block.contents[0];
+    for(number_of_indirect; data_block.contents[number_of_indirect] != 0; number_of_indirect++) ;
+    return number_of_indirect;
+}
+
 void mycat(char** commands) {
-    char* file_name = (char *)malloc(sizeof(char) * 7); 
-    char* file_content = (char *)calloc(256 * 8, sizeof(char));
+    char* file_name = (char *)calloc(sizeof(char), 8); 
     int i = 0;
     int printlen = 0;
     if(*(commands + 1) == NULL) {
@@ -177,11 +334,12 @@ void mycat(char** commands) {
         return ;
     }
     strcpy(file_name, *(commands + 1));
+    char* file_content = (char *)calloc(256 * 8 + 1, sizeof(char) + 1);
     strcpy(file_content, getFileContentsWithSourceFileName(file_name, true));
     
     if(!strcmp(file_content, "그런 파일이 없습니다.\n")) {
-        errmsg("그런 파일이 없습니다.\n");
-        free(file_name);
+        printf("그런 파일이 없습니다.\n");
+        //정적 문자열이므로 free 하지 않음
         return ;
     }
 
@@ -189,7 +347,18 @@ void mycat(char** commands) {
     for(int i = 0; i < printlen; i++) {
         if(file_content[i] != '\0') printf("%c", file_content[i]);
     }
+
+    if(getUsingIndirectBlock(file_name)) {//indirect 출력
+        int using_indirect_block_number = getUsingIndirectBlock(file_name);
+        char* indirect_content = (char *)calloc(256 * using_indirect_block_number + 1, sizeof(char));
+        strcpy(indirect_content, getIndirectBlockContentsWithSourceFileName(file_name));
+        int indirect_printlen = strlen(indirect_content) - using_indirect_block_number;
+        for(int i = 0; i < indirect_printlen; i++) printf("%c", indirect_content[i]);
+        free(indirect_content);
+    }
+
     printf("\n");
+    //free(file_name); 
     free(file_content);
     }
 
@@ -248,8 +417,22 @@ void myshowfile(char** commands) {
     num1 = strtol(commands[1], NULL, 10);
     num2 = strtol(commands[2], NULL, 10);
     strcpy(file_name, commands[3]);
-    char* file_content = (char *)calloc(256 * 8, sizeof(char));
+    char* file_content = (char *)calloc(256 * 8 + 1, sizeof(char));
     strcpy(file_content, getFileContentsWithSourceFileName(file_name, true));
+    int printlen = strlen(file_content) - (7 - strlen(file_content)/256);
+    int contentlen = strlen(file_content);
+    for(int i = 0; i < 7 - contentlen/256; i++) {
+        file_content[contentlen - 1 - i] = 0;    
+    }
+
+    if(getUsingIndirectBlock) {
+        int using_indirect_block_number = getUsingIndirectBlock(file_name);
+        char* indirect_content = (char *)calloc(256 * using_indirect_block_number + 1, sizeof(char));
+        strcpy(indirect_content, getIndirectBlockContentsWithSourceFileName(file_name));
+        int indirect_printlen = strlen(indirect_content) - using_indirect_block_number;
+        for(int i = 0; i < using_indirect_block_number; i++) indirect_content[strlen(indirect_content) - 1 - i] = 0;
+        strcat(file_content, indirect_content);
+    }
 
     if (num1 < 0 || num2 >= strlen(file_content) || num1 > num2) {
         printf("범위가 올바르지 않습니다.\n"); //임시
@@ -280,25 +463,41 @@ void myshowfile(char** commands) {
     free(file_content);
 }
 
-void myrm(char** commands) {
-    if(commands[1] == NULL) {
-        printf("인자가 불충분합니다.");
-        return ;
-    }
-    else if(strlen(commands[1]) > 7) {
-        printf("파일 이름이 너무 깁니다.");
-        return ;
-    }
+// void myrm(char** commands) {
+//     char* file_name;
+//     if(commands[1] == NULL) {
+//         printf("인자가 불충분합니다.");
+//         return ;
+//     }
+//     else if(strlen(commands[1]) > 7) {
+//         printf("파일 이름이 너무 깁니다.");
+//         return ;
+//     }
 
-    SuperBlock super_block = getSuperBlock();
-	InodeList inode_list;
-    DataBlock data_block;
+//     int inode_number;
+//     int data_block_adress;
+//     SuperBlock super_block = getSuperBlock();
+// 	InodeList inode_list;
+//     DataBlock data_block;
+//     file_name = malloc(sizeof(char) * strlen(commands[1]) + 1);
+//     strcpy(file_name, commands[1]);
+//     inode_number = getInodeNumberWithSourceFileName(file_name);
+    
+//     if(getAllDirectAdressWithSourceFileName(file_name, 0) == 'e' || inode_number == -1) {
+//             printf("그런 파일이 없습니다.\n");
+//             return;
+//     }
 
-    for(int i = 0; i < 8; i++) {
-        inode_list = getInodeList(getAllDirectAdressWithSourceFileName(commands[1], i));
-        
-    }
-}
+//     setInodeList(inode_number, 0, 0, 0, 0, 0, 0, 0);
+
+//     int i = 0;
+//     while(i < 8 && getAllDirectAdressWithSourceFileName(file_name, i) != 'e') {
+//         data_block_adress = getAllDirectAdressWithSourceFileName(file_name, i);
+//         setDataBlock(data_block_adress, "\0");
+//         setSuperBlock(128 + data_block_adress + 1, 0);
+//     }
+    
+// }
 
 void mycp(char** commands) {
     char* source_file;
@@ -329,14 +528,31 @@ void mycp(char** commands) {
     SuperBlock super_block = getSuperBlock();
 	InodeList inode_list;
     DataBlock data_block;
-    char* source_file_content = (char *)calloc(256 * 8, sizeof(char));
-    char* sliced_source_file_content = (char*)malloc(sizeof(char) * 256 * 8 - 1);
+    char* source_file_content = (char *)calloc(256 * 8 + 1, sizeof(char));
+    char* sliced_source_file_content = (char*)calloc(256 * 8, sizeof(char));
+    bool is_indirect_block_used = false;
+    if(getUsingIndirectBlock(source_file)) {
+        is_indirect_block_used = true;
+        int using_indirect_block_number = getUsingIndirectBlock(source_file);
+        sliced_source_file_content = (char*)realloc(sliced_source_file_content, (256 * 8 + 256 * using_indirect_block_number) * sizeof(char));
+    }
     strcpy(source_file_content, getFileContentsWithSourceFileName(source_file, true));
-    getNeededDirectAdressNumber(source_file_content);
-    inode_list_address_of_dest_file = allocateInodeForNewFiles(dest_file, getNeededDirectAdressNumber(source_file_content), strlen(source_file_content));
     strncpy(sliced_source_file_content, source_file_content, strlen(source_file_content) - (7 - (strlen(source_file_content) / 256)));
-    printf("%s", sliced_source_file_content);
-    writeFileContents(sliced_source_file_content, inode_list_address_of_dest_file, getNeededDirectAdressNumber(source_file_content));
+
+    if(is_indirect_block_used) {
+        char* source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file) + 1, sizeof(char));
+        char* sliced_source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file), sizeof(char));
+        strcpy(source_indirect_content, getIndirectBlockContentsWithSourceFileName(source_file));
+        strncpy(sliced_source_indirect_content, source_indirect_content, strlen(source_indirect_content) - getUsingIndirectBlock(source_file));
+        strcat(sliced_source_file_content, sliced_source_indirect_content);
+        free(source_indirect_content);
+        free(sliced_source_indirect_content);
+    }
+    getNeededDirectAdressNumber(sliced_source_file_content);
+    inode_list_address_of_dest_file = allocateInodeForNewFiles(dest_file, getNeededDirectAdressNumber(sliced_source_file_content), strlen(sliced_source_file_content));
+    //strncpy(sliced_source_file_content, source_file_content, strlen(source_file_content) - (7 - (strlen(source_file_content) / 256)));
+
+    writeFileContents(sliced_source_file_content, inode_list_address_of_dest_file, getNeededDirectAdressNumber(sliced_source_file_content));
     free(source_file);
     free(dest_file);
     free(source_file_content);
@@ -347,30 +563,46 @@ void mycpto(char** commands) {
     char* source_file;
     char* host_dest_file;
 
-    if(commands[1] == NULL) {
+    if(*(commands + 1) == NULL) {
         printf("인자가 불충분합니다."); 
         return ;
     }
-    else if(strlen(commands[1]) > 7) {
+    else if(strlen(*(commands + 1)) > 7) {
         printf("그런 파일이 없습니다."); 
         return ;
     }
-    if(commands[2] == NULL) {
+    if(*(commands + 2) == NULL) {
         printf("인자가 불충분합니다."); 
         return ;
     }
 
-    source_file = malloc(sizeof(char) * strlen(commands[1]) + 1);
-    host_dest_file = malloc(sizeof(char) * strlen(commands[2]) + 1);
-    char* source_file_content = (char*)malloc(sizeof(char) * 256 * 8);
-    char* sliced_source_file_content = (char*)malloc(sizeof(char) * 256 * 8 - 1);
 
-    strcpy(source_file, commands[1]);
-    strcpy(host_dest_file, commands[2]);
+    strcpy(source_file, *(commands + 1));
+    strcpy(host_dest_file, *(commands + 2));
+    
+    char* source_file_content = (char *)calloc(256 * 8 + 1, sizeof(char));
+    char* sliced_source_file_content = (char*)calloc(256 * 8, sizeof(char));
+    bool is_indirect_block_used = false;
+    if(getUsingIndirectBlock(source_file)) {
+        is_indirect_block_used = true;
+        int using_indirect_block_number = getUsingIndirectBlock(source_file);
+        sliced_source_file_content = (char*)realloc(sliced_source_file_content, (256 * 8 + 256 * using_indirect_block_number) * sizeof(char));
+    }
     strcpy(source_file_content, getFileContentsWithSourceFileName(source_file, true));
-    FILE *host_txt;
-    getNeededDirectAdressNumber(source_file_content);
     strncpy(sliced_source_file_content, source_file_content, strlen(source_file_content) - (7 - (strlen(source_file_content) / 256)));
+
+    if(is_indirect_block_used) {
+        char* source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file) + 1, sizeof(char));
+        char* sliced_source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file), sizeof(char));
+        strcpy(source_indirect_content, getIndirectBlockContentsWithSourceFileName(source_file));
+        strncpy(sliced_source_indirect_content, source_indirect_content, strlen(source_indirect_content) - getUsingIndirectBlock(source_file));
+        strcat(sliced_source_file_content, sliced_source_indirect_content);
+        free(source_indirect_content);
+        free(sliced_source_indirect_content);
+    }
+    
+    FILE *host_txt;
+    
 
     host_txt = fopen(host_dest_file, "w+");
     if(host_txt == NULL) {
@@ -378,7 +610,7 @@ void mycpto(char** commands) {
         return ;
     }
     for(int i = 0; i < strlen(sliced_source_file_content); i++) {
-        fputc(sliced_source_file_content[i], host_txt);
+        fputc(*(sliced_source_file_content + i), host_txt);
     }
     fclose(host_txt);
     free(source_file);
@@ -412,7 +644,6 @@ void mycpfrom(char** commands) {
 	InodeList inode_list;
     DataBlock data_block;
     FILE *host_txt;
-    char *host_content = {0};
     int host_txt_size;
     char *buffer;
     int file_count;
