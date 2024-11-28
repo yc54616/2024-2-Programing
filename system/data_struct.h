@@ -29,6 +29,7 @@ struct FunctionCallByString
 };
 
 /* functions */
+void deleteInDirectory(int inode);
 void deleteDirectory(char *name, int inode);
 void writeDirectory(char *name, int inode, int type);
 int getNowWorkingDirectoryInodeNumber();
