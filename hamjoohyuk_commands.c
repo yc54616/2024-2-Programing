@@ -6,6 +6,7 @@
 #include "system/file_system.h"
 #include "system/io_stream.h"
 #include "system/data_struct.h"
+#include "hamjoohyuk_commands.h"
 
 time_t getCurTime() {
     time_t cur_time;
@@ -425,32 +426,40 @@ void myshowfile(char** commands) {
         file_content[contentlen - 1 - i] = 0;    
     }
 
-    if(getUsingIndirectBlock) {
+    if(getUsingIndirectBlock(file_name)) {
+        file_content = (char *)realloc(file_content, (256 * 8 + getUsingIndirectBlock(file_name) * 256 + 1) * sizeof(char));
+        if(file_content == NULL) {
+            printf("파일 포인터 에러!");
+            return ;
+        }
         int using_indirect_block_number = getUsingIndirectBlock(file_name);
         char* indirect_content = (char *)calloc(256 * using_indirect_block_number + 1, sizeof(char));
         strcpy(indirect_content, getIndirectBlockContentsWithSourceFileName(file_name));
         int indirect_printlen = strlen(indirect_content) - using_indirect_block_number;
-        for(int i = 0; i < using_indirect_block_number; i++) indirect_content[strlen(indirect_content) - 1 - i] = 0;
+        int indirect_strlen = strlen(indirect_content);
+        for(int i = 0; i < using_indirect_block_number; i++) indirect_content[indirect_strlen - 1 - i] = 0;
         strcat(file_content, indirect_content);
+        if(indirect_content != NULL) free(indirect_content);
     }
-
-    if (num1 < 0 || num2 >= strlen(file_content) || num1 > num2) {
-        printf("범위가 올바르지 않습니다.\n"); //임시
-        free(file_content);
-        return ;
-    }
-
 
     if(!strcmp(file_content, "그런 파일이 없습니다.\n")) {
         printf("그런 파일이 없습니다.\n");
-        //정적 문자열이므로 free 하지 않음
+        if(file_content != NULL) free(file_content);
         return ;
     }
+    
+    
+    if (num1 < 0 || num2 >= strlen(file_content) || num1 > num2) {
+        printf("범위가 올바르지 않습니다.\n"); //임시
+        if(file_content != NULL) free(file_content);
+        return ;
+    }
+
 
     for (i = num1 - 1; i <= num2 - 1; i++) {
         if(file_content[i] == '\0') {
             printf("범위가 올바르지 않습니다.\n");
-            free(file_content);
+            if(file_content != NULL) free(file_content);
             return ;
         }
     }
@@ -460,7 +469,7 @@ void myshowfile(char** commands) {
     }
 
     printf("\n");
-    free(file_content);
+    if(file_content != NULL) free(file_content);
 }
 
 // void myrm(char** commands) {
@@ -545,19 +554,19 @@ void mycp(char** commands) {
         strcpy(source_indirect_content, getIndirectBlockContentsWithSourceFileName(source_file));
         strncpy(sliced_source_indirect_content, source_indirect_content, strlen(source_indirect_content) - getUsingIndirectBlock(source_file));
         strcat(sliced_source_file_content, sliced_source_indirect_content);
-        free(source_indirect_content);
-        free(sliced_source_indirect_content);
+        if(source_indirect_content != NULL) free(source_indirect_content);
+        if(sliced_source_indirect_content != NULL) free(sliced_source_indirect_content);
     }
     getNeededDirectAdressNumber(sliced_source_file_content);
     inode_list_address_of_dest_file = allocateInodeForNewFiles(dest_file, getNeededDirectAdressNumber(sliced_source_file_content), strlen(sliced_source_file_content));
     //strncpy(sliced_source_file_content, source_file_content, strlen(source_file_content) - (7 - (strlen(source_file_content) / 256)));
 
     writeFileContents(sliced_source_file_content, inode_list_address_of_dest_file, getNeededDirectAdressNumber(sliced_source_file_content));
-    free(source_file);
-    free(dest_file);
-    free(source_file_content);
-    free(sliced_source_file_content);
-}
+    if (source_file != NULL) free(source_file);
+    if (dest_file != NULL) free(dest_file);
+    if (source_file_content != NULL) free(source_file_content);
+    if (sliced_source_file_content != NULL) free(sliced_source_file_content);
+    }
 
 void mycpto(char** commands) {
     char* source_file;
@@ -576,6 +585,9 @@ void mycpto(char** commands) {
         return ;
     }
 
+
+    source_file = malloc(sizeof(char) * strlen(commands[1]) + 1);
+    host_dest_file = malloc(sizeof(char) * strlen(commands[2]) + 1);
 
     strcpy(source_file, *(commands + 1));
     strcpy(host_dest_file, *(commands + 2));
@@ -597,13 +609,11 @@ void mycpto(char** commands) {
         strcpy(source_indirect_content, getIndirectBlockContentsWithSourceFileName(source_file));
         strncpy(sliced_source_indirect_content, source_indirect_content, strlen(source_indirect_content) - getUsingIndirectBlock(source_file));
         strcat(sliced_source_file_content, sliced_source_indirect_content);
-        free(source_indirect_content);
-        free(sliced_source_indirect_content);
+        if(source_indirect_content != NULL) free(source_indirect_content);
+        if(sliced_source_indirect_content != NULL) free(sliced_source_indirect_content);
     }
     
     FILE *host_txt;
-    
-
     host_txt = fopen(host_dest_file, "w+");
     if(host_txt == NULL) {
         printf("호스트 파일을 만들거나 열 수 없습니다.\n");
@@ -613,10 +623,10 @@ void mycpto(char** commands) {
         fputc(*(sliced_source_file_content + i), host_txt);
     }
     fclose(host_txt);
-    free(source_file);
-    free(host_dest_file);
-    free(source_file_content);
-    free(sliced_source_file_content);
+    if(source_file != NULL) free(source_file);
+    if(host_dest_file != NULL) free(host_dest_file);
+    if(source_file_content != NULL) free(source_file_content);
+    if(sliced_source_file_content != NULL) free(sliced_source_file_content);
 }
 
 void mycpfrom(char** commands) {
