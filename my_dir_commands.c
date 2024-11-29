@@ -83,7 +83,7 @@ void myrm(char **commands)
 		printf("%d\n", inode_number);
 	}
 	else{
-		printf("myrm: 제거할 수 없습니다: 그런 파일이 없습니다\n");
+		printf("myrm: Cannot remove: No such file or directory.\n");
 		free(arg);
 		free(path);
 		free(finalStr);
@@ -93,25 +93,19 @@ void myrm(char **commands)
 	InodeList inode_list = getInodeList(inode_number);
 	if (inode_list.file_mode == DIRECTORY)
 	{
-		setSuperBlock(inode_number, 0);
-		setSuperBlock(SIZE_INODELIST + inode_number, 0);
-		initInodeList(inode_number);		
-
-		deleteInDirectory(inode_number);
-
-		deleteDirectory(finalStr, inode_number_base);
-		//writeDirectory
-
-		printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
+		printf("myrm : It is a directory. Please enter the file name. \n");
+		return;
 	}
 	else
 	{
 		setSuperBlock(inode_number, 0);
 		setSuperBlock(SIZE_INODELIST + inode_number, 0);
 		initInodeList(inode_number);
-		
+
 		deleteDirectory(finalStr, inode_number_base);
 		deleteInDirectory(inode_number);
+
+		printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
 
 	}
 
