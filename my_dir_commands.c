@@ -18,10 +18,55 @@ int _compare_files(const void *file1, const void *file2)
 	return strncmp((unsigned char *)file1, (unsigned char *)file2, 7);
 }
 
-void myrm(char **commands)
+void mymv(char **commands)
 {
 	char *argument = commands[1];
 
+	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	strcpy(arg, argument);
+
+	int inode_number = findNameToInode(arg);
+
+	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
+	
+	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
+
+	if (inode_number != 0)
+	{
+		printf("FIND!!\n");
+		printf("%d\n", inode_number);
+	}
+	else{
+		printf("mymv: No such File\n");
+		free(arg);
+		free(path);
+		free(finalStr);
+		return;
+	}
+	deleteDirectory(finalStr, inode_number_base);	
+
+	char new_path[20][8];
+	int num=0;
+	for (int i=0; commands[2][i]!= '\0'; i++){  //새로운 위치로 파일 옮기기
+		for (int j=0; j<8;j++){
+			if (commands[2][i] == '/' && num > 0){
+				num++;
+				break;
+			}
+			new_path[num][j]=commands[2][i];
+			i++;
+		}
+	}
+	inode_number_base = findNameToInode(new_path[num-1]);
+
+}
+
+// 1. 지울 inode가 파일인지 아닌지 확인하기
+// 2. 디렉토리 내용만 지우는데 -> 파일 atablock 내둉도 지우도록
+void myrm(char **commands)
+{
+	char *argument = commands[1];
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	strcpy(arg, argument);
 
@@ -45,15 +90,31 @@ void myrm(char **commands)
 		return;
 	}
 
-	setSuperBlock(inode_number, 0);
-	setSuperBlock(SIZE_INODELIST + inode_number, 0);
+	InodeList inode_list = getInodeList(inode_number);
+	if (inode_list.file_mode == DIRECTORY)
+	{
+		setSuperBlock(inode_number, 0);
+		setSuperBlock(SIZE_INODELIST + inode_number, 0);
+		initInodeList(inode_number);		
 
-	deleteInDirectory(inode_number);
+		deleteInDirectory(inode_number);
 
-	deleteDirectory(finalStr, inode_number_base);
+		deleteDirectory(finalStr, inode_number_base);
+		//writeDirectory
 
-	printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
-	
+		printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
+	}
+	else
+	{
+		setSuperBlock(inode_number, 0);
+		setSuperBlock(SIZE_INODELIST + inode_number, 0);
+		initInodeList(inode_number);
+		
+		deleteDirectory(finalStr, inode_number_base);
+		deleteInDirectory(inode_number);
+
+	}
+
 	free(arg);
 	free(path);
 	free(finalStr);
@@ -228,34 +289,51 @@ void myrmdir(char **commands)
 
 	if (commands[1] == NULL)
 		return;
-
-	int inode_number = findNameToInode(argument);
+	char names[8] = {0, };
+	strcpy(names, argument);
+	int inode_number = findNameToInode(names);
 
 	if (inode_number == 0)
 		return;
-
 	InodeList inode_list = getInodeList(inode_number);
 	DataBlock curDatablock = getDataBlock(inode_number - 1);
 
-	if (inode_list.file_mode != DIRECTORY)
+	if (inode_list.file_mode != DIRECTORY){
+		printf("Error : Not a Directory..\n");
 		return;
-
+	}
 	// 디렉토리가 비어있는지 확인
 	if (inode_list.size > 16)
 	{
-		printf("Error: Directory '%s' is not empty.\n", argument);
+		printf("Error: Directory '%s' is not empty.\n", names);
 		return;
 	}
 
-	setInodeList(working_directory->my_inode_number, 0, 0, 0, 0, 0, 0, 0);
+    int count = 0;
+    for (int i = 0; i < SIZE_DATABLOCK_IN_SUPERBLOCK; i++) {
+    	if (curDatablock.subfiles[i] != NULL && strlen(curDatablock.subfiles[i]) > 0)
+    	{
+    	    printf("subfile[%d]: %s\n", i, curDatablock.subfiles[i]); 
+            if (strcmp(curDatablock.subfiles[i], ".") != 0 && strcmp(curDatablock.subfiles[i], "..") != 0)
+    	        count++;
+    	}
+    }
+    // 디렉토리가 비어있는지 확인
+    if (count){
+    	printf("Error: Directory '%s' is not empty.\n", names);
+    	    return;
+    }
 
-	/*for (int i = 0; i < 32; i++)
-	{
-		curDatablock.subfiles[i] = 0;
-	}
-
-	setSuperBlock(inode_number, 0);
-	setSuperBlock(SIZE_INODELIST + inode_number, 0);*/
+	initInodeList(inode_number);
+	deleteInDirectory(inode_number);
+    setSuperBlock(inode_number, 0);
+    setSuperBlock(SIZE_INODELIST + inode_number, 0);
+	int inode_number_base = working_directory -> parent -> my_inode_number;
+	InodeList parent_inode = getInodeList(inode_number_base);
+	deleteDirectory(names, inode_number_base);
+    // // 부모 디렉터리 데이터 블록 업데이트
+    // setDataBlock(working_directory -> parent->my_inode_number - 1, subfile[32]);
+    //setInodeList(working_directory -> parent->my_inode_number, parent_inode.file_mode, parent_inode.access_date, parent_inode.birth_date, parent_inode.size, parent_inode.reference_count, parent_inode.direct_address, parent_inode.single_indirect_address);
 }
 
 void myls(char **commands)
