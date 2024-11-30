@@ -31,6 +31,7 @@ void mymv(char **commands)
 	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
 	
 	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
+	finalStr[7] = inode_number;
 
 	if (inode_number != 0)
 	{
@@ -48,17 +49,48 @@ void mymv(char **commands)
 
 	char new_path[20][8];
 	int num=0;
-	for (int i=0; commands[2][i]!= '\0'; i++){  //새로운 위치로 파일 옮기기
+	for (int i=0; path[i]!= '\0'; i++){  //새로운 위치로 파일 옮기기
 		for (int j=0; j<8;j++){
-			if (commands[2][i] == '/' && num > 0){
+			if (path[i] == '/' && num > 0){
 				num++;
 				break;
 			}
-			new_path[num][j]=commands[2][i];
+			new_path[num][j]= path[i];
 			i++;
 		}
 	}
-	inode_number_base = findNameToInode(new_path[num-1]);
+	if (num > 0){
+		inode_number_base = findNameToInode(new_path[num-1]);//부모디렉터리 inode number 찾기
+	}
+	else{
+		inode_number_base = 1;
+	}
+
+	if (inode_number_base != 0)
+	{
+		printf("FIND!!\n");
+		printf("%d\n", inode_number_base);
+	}
+	else{
+		printf("mymv: No such File\n");
+		free(arg);
+		free(path);
+		free(finalStr);
+		return;
+	}
+
+	InodeList inode_list = getInodeList(inode_number);
+	InodeList inode_list_base = getInodeList(inode_number_base);
+
+	if (inode_list_base.file_mode != DIRECTORY){
+		printf("Invalid path.\n");
+		return;
+	}
+
+	if (inode_list.file_mode == DIRECTORY)
+		writeDirectory(finalStr, inode_number_base, DIRECTORY);
+	else
+		writeDirectory(finalStr, inode_number_base, GENERAL);
 
 }
 
@@ -100,10 +132,10 @@ void myrm(char **commands)
 	{
 		setSuperBlock(inode_number, 0);
 		setSuperBlock(SIZE_INODELIST + inode_number, 0);
-		initInodeList(inode_number);
 
 		deleteDirectory(finalStr, inode_number_base);
 		deleteInDirectory(inode_number);
+		initInodeList(inode_number);
 
 		printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
 
