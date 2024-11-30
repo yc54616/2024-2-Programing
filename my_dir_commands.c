@@ -21,6 +21,7 @@ int _compare_files(const void *file1, const void *file2)
 void mymv(char **commands)
 {
 	char *argument = commands[1];
+	char *new_name = commands[2];
 
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	strcpy(arg, argument);
@@ -45,52 +46,31 @@ void mymv(char **commands)
 		free(finalStr);
 		return;
 	}
-	deleteDirectory(finalStr, inode_number_base);	
-
-	char new_path[20][8];
-	int num=0;
-	for (int i=0; path[i]!= '\0'; i++){  //새로운 위치로 파일 옮기기
-		for (int j=0; j<8;j++){
-			if (path[i] == '/' && num > 0){
-				num++;
-				break;
-			}
-			new_path[num][j]= path[i];
-			i++;
-		}
-	}
-	if (num > 0){
-		inode_number_base = findNameToInode(new_path[num-1]);//부모디렉터리 inode number 찾기
-	}
-	else{
-		inode_number_base = 1;
-	}
-
-	if (inode_number_base != 0)
-	{
-		printf("FIND!!\n");
-		printf("%d\n", inode_number_base);
-	}
-	else{
-		printf("mymv: No such File\n");
-		free(arg);
-		free(path);
-		free(finalStr);
-		return;
-	}
-
+	deleteDirectory(finalStr, inode_number_base);//원래 위치에 있는 파일/디렉토리 이름 지우기
+	printf("erhseku\n");
+	int new_inode_number = findNameToInode(new_name);	
 	InodeList inode_list = getInodeList(inode_number);
-	InodeList inode_list_base = getInodeList(inode_number_base);
-
-	if (inode_list_base.file_mode != DIRECTORY){
-		printf("Invalid path.\n");
-		return;
+	InodeList new_inode_list = getInodeList(new_inode_number);
+	printf("sdklfjs;d\n");
+	if (new_inode_number != 0){//위치를 옮기는 경우
+		printf("FIND!!\n");
+		printf("%d\n", new_inode_number);
+		if (inode_list.file_mode == DIRECTORY)
+			writeDirectory(finalStr, new_inode_number, DIRECTORY);
+		else
+			writeDirectory(finalStr, new_inode_number, GENERAL);
 	}
-
-	if (inode_list.file_mode == DIRECTORY)
-		writeDirectory(finalStr, inode_number_base, DIRECTORY);
-	else
-		writeDirectory(finalStr, inode_number_base, GENERAL);
+	else {//파일 이름을 바꾸는 경우
+		if (new_name == NULL){
+			printf("mymv: Enter the FILE/DIRECTORY name\n");
+			free(arg);
+			free(path);
+			free(finalStr);
+			return;			
+		}
+		new_name[7] = inode_number;
+		writeDirectory(new_name, inode_number_base, GENERAL);
+	}
 
 }
 
