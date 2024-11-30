@@ -31,6 +31,7 @@ struct FunctionCallByString g_command_list[500] =
         commandIntoFunction(mymkfs),
         commandIntoFunction(mycpfrom),
         commandIntoFunction(myrm),
+        commandIntoFunction(mymv),  
     };
 void Print_ID(char *computerId, char *userId);
 void Print_WD();
