@@ -21,10 +21,12 @@ int _compare_files(const void *file1, const void *file2)
 void mymv(char **commands)
 {
 	char *argument = commands[1];
-	char *new_name = commands[2];
+	char *argument2 = commands[2];
 
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument2));
 	strcpy(arg, argument);
+	strcpy(new_name, argument2);
 
 	int inode_number = findNameToInode(arg);
 
@@ -32,11 +34,10 @@ void mymv(char **commands)
 	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
 	
 	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
-	finalStr[7] = inode_number;
 
 	if (inode_number != 0)
 	{
-		printf("FIND!!\n");
+		printf("inode_number FIND!!\n");
 		printf("%d\n", inode_number);
 	}
 	else{
@@ -44,16 +45,16 @@ void mymv(char **commands)
 		free(arg);
 		free(path);
 		free(finalStr);
+		free(new_name);
 		return;
 	}
 	deleteDirectory(finalStr, inode_number_base);//원래 위치에 있는 파일/디렉토리 이름 지우기
-	printf("erhseku\n");
+	
+	printf("new_name : %s\n", new_name);
 	int new_inode_number = findNameToInode(new_name);	
 	InodeList inode_list = getInodeList(inode_number);
-	InodeList new_inode_list = getInodeList(new_inode_number);
-	printf("sdklfjs;d\n");
 	if (new_inode_number != 0){//위치를 옮기는 경우
-		printf("FIND!!\n");
+		printf("new_inode_number FIND!!\n");
 		printf("%d\n", new_inode_number);
 		if (inode_list.file_mode == DIRECTORY)
 			writeDirectory(finalStr, new_inode_number, DIRECTORY);
@@ -61,16 +62,23 @@ void mymv(char **commands)
 			writeDirectory(finalStr, new_inode_number, GENERAL);
 	}
 	else {//파일 이름을 바꾸는 경우
-		if (new_name == NULL){
-			printf("mymv: Enter the FILE/DIRECTORY name\n");
-			free(arg);
-			free(path);
-			free(finalStr);
-			return;			
-		}
-		new_name[7] = inode_number;
-		writeDirectory(new_name, inode_number_base, GENERAL);
+		unsigned char writeName[8] = {0,};
+		for(int i = 0;i < 7; i++)
+			writeName[i] = new_name[i];
+		writeName[7] = inode_number;
+		for(int i = 0;i < 8; i++)
+			printf("%c", writeName[i]);
+		printf("\n");
+		if (inode_list.file_mode == DIRECTORY)
+			writeDirectory(writeName, inode_number_base, DIRECTORY);
+		else
+			writeDirectory(writeName, inode_number_base, GENERAL);
 	}
+
+	free(arg);
+	free(path);
+	free(finalStr);
+	free(new_name);
 
 }
 
