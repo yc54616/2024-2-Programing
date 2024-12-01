@@ -374,53 +374,48 @@ int getUsingIndirectBlock(char *source_file)
 
 void mycat(char **commands)
 {
-    char *file_name = (char *)calloc(sizeof(char) + 1, 8);
-    int i = 0;
-    int printlen = 0;
     if (*(commands + 1) == NULL)
     {
         errmsg("인자가 불충분합니다.\n");
-        free(file_name);
-        return;
-    }
-    else if (strlen(*(commands + 1)) > 7)
-    {
-        errmsg("그런 파일이 없습니다.\n");
-        free(file_name);
-        return;
-    }
-    strcpy(file_name, *(commands + 1));
-    char *file_content = (char *)calloc(256 * 8 + 1, sizeof(char) + 2);
-    strcpy(file_content, getFileContentsWithSourceFileName(file_name, true));
-
-    if (!strcmp(file_content, "그런 파일이 없습니다.\n"))
-    {
-        printf("그런 파일이 없습니다.\n");
-        // 정적 문자열이므로 free 하지 않음
         return;
     }
 
-    printlen = strlen(file_content) - (7 - strlen(file_content) / 256);
-    for (int i = 0; i < printlen; i++)
-    {
-        if (file_content[i] != '\0')
-            printf("%c", file_content[i]);
+	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[1]));
+	strcpy(arg, commands[1]);
+
+	int inode_number = findNameToInode(arg);
+
+    if(inode_number == 0){
+        printf("mycat: 그런 파일이나 디렉터리가 없습니다\n");
+        free(arg);
+        return;
     }
 
-    if (getUsingIndirectBlock(file_name))
-    { // indirect 출력
-        int using_indirect_block_number = getUsingIndirectBlock(file_name);
-        char *indirect_content = (char *)calloc(256 * using_indirect_block_number + 1, sizeof(char) + 2);
-        strcpy(indirect_content, getIndirectBlockContentsWithSourceFileName(file_name));
-        int indirect_printlen = strlen(indirect_content) - using_indirect_block_number;
-        for (int i = 0; i < indirect_printlen; i++)
-            printf("%c", indirect_content[i]);
-        free(indirect_content);
-    }
+    InodeList inodeList = getInodeList(inode_number);
 
-    printf("\n");
-    // free(file_name);
-    free(file_content);
+    for (int i = 0; i < inodeList.reference_count; i++)
+	{
+        DataBlock datablock = getDataBlock(*(inodeList.direct_address+i));
+        for(int j = 0; j < 256; j++){
+            if(*(datablock.contents+j) == '\0')
+                break;
+            printf("%c", *(datablock.contents+j));
+        }
+	}
+
+    if(inodeList.single_indirect_address != 0){
+        DataBlock singleInodeList = getDataBlock(inodeList.single_indirect_address);
+        int indirect_point_cnt = *(singleInodeList.contents);
+        for (int i = 1; i <= indirect_point_cnt; i++)
+        {
+            DataBlock datablock = getDataBlock(*(singleInodeList.contents+i));
+		    for(int j = 0; j < 256; j++){
+                if(*(datablock.contents+j) == '\0')
+                    break;
+		        printf("%c", *(datablock.contents+j));
+            }
+        }
+    }
 }
 
 void myshowfile(char **commands)
@@ -765,7 +760,38 @@ void mycpfrom(char **commands)
 	
 	int inode_number_base = findNameToBaseInode(new_name, path, dest_file);
 
-    printf("host_source_file : %s, new_name : %s, path : %s, dest_file : %s\n", host_source_file, new_name, path, dest_file);
+
+    int new_inode_number = findNameToInode(new_name);	
+	
+	if (new_inode_number != 0){//위치를 옮기는 경우
+		InodeList inode_list = getInodeList(new_inode_number);
+		
+		if (inode_list.file_mode == DIRECTORY){
+            inode_number_base = new_inode_number;
+            
+            if(strlen(host_source_file) > 7){
+                printf("File Name too long..\n");
+                free(host_source_file);
+                free(new_name);
+                free(path);
+                free(dest_file);
+                return;
+            }
+            else{
+                strcpy(dest_file, host_source_file);
+            }
+		}
+		else{
+            printf("파일을 옮길 수 없습니다.\n");
+            free(host_source_file);
+            free(new_name);
+            free(path);
+            free(dest_file);
+            return;
+        }
+	}
+
+    printf("inode_number_base : %d, host_source_file : %s, new_name : %s, path : %s, dest_file : %s\n", inode_number_base, host_source_file, new_name, path, dest_file);
 
     SuperBlock super_block = getSuperBlock();
     InodeList inode_list;
