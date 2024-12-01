@@ -18,10 +18,82 @@ int _compare_files(const void *file1, const void *file2)
 	return strncmp((unsigned char *)file1, (unsigned char *)file2, 7);
 }
 
+void mymv(char **commands)
+{
+	char *argument = commands[1];
+	char *argument2 = commands[2];
+
+	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument2));
+	strcpy(arg, argument);
+	strcpy(new_name, argument2);
+
+	int inode_number = findNameToInode(arg);
+
+	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
+	
+	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
+
+	if (inode_number != 0)
+	{
+		printf("inode_number FIND!!\n");
+		printf("%d\n", inode_number);
+	}
+	else{
+		printf("mymv: No such File\n");
+		free(arg);
+		free(path);
+		free(finalStr);
+		free(new_name);
+		return;
+	}
+	deleteDirectory(finalStr, inode_number_base);//원래 위치에 있는 파일/디렉토리 이름 지우기
+	
+	printf("new_name : %s\n", new_name);
+	int new_inode_number = findNameToInode(new_name);	
+	
+	if (new_inode_number != 0){//위치를 옮기는 경우
+		InodeList inode_list = getInodeList(new_inode_number);
+		unsigned char writeName[8] = {0,};
+		for(int i = 0;i < 7; i++)
+			writeName[i] = finalStr[i];
+		writeName[7] = inode_number;
+		printf("new_inode_number FIND!! %d\n", inode_number);
+		
+		printf("%d\n", new_inode_number);
+		if (inode_list.file_mode == DIRECTORY)
+			writeDirectory(writeName, new_inode_number, DIRECTORY);
+		else
+			writeDirectory(writeName, new_inode_number, GENERAL);
+	}
+	else {//파일 이름을 바꾸는 경우
+		InodeList inode_list = getInodeList(inode_number);
+		unsigned char writeName[8] = {0,};
+		for(int i = 0;i < 7; i++)
+			writeName[i] = new_name[i];
+		writeName[7] = inode_number;
+		for(int i = 0;i < 8; i++)
+			printf("%c", writeName[i]);
+		printf("\n");
+		if (inode_list.file_mode == DIRECTORY)
+			writeDirectory(writeName, inode_number_base, DIRECTORY);
+		else
+			writeDirectory(writeName, inode_number_base, GENERAL);
+	}
+
+	free(arg);
+	free(path);
+	free(finalStr);
+	free(new_name);
+
+}
+
+// 1. 지울 inode가 파일인지 아닌지 확인하기
+// 2. 디렉토리 내용만 지우는데 -> 파일 atablock 내둉도 지우도록
 void myrm(char **commands)
 {
 	char *argument = commands[1];
-
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	strcpy(arg, argument);
 
@@ -38,22 +110,32 @@ void myrm(char **commands)
 		printf("%d\n", inode_number);
 	}
 	else{
-		printf("myrm: 제거할 수 없습니다: 그런 파일이 없습니다\n");
+		printf("myrm: Cannot remove: No such file or directory.\n");
 		free(arg);
 		free(path);
 		free(finalStr);
 		return;
 	}
 
-	setSuperBlock(inode_number, 0);
-	setSuperBlock(SIZE_INODELIST + inode_number, 0);
+	InodeList inode_list = getInodeList(inode_number);
+	if (inode_list.file_mode == DIRECTORY)
+	{
+		printf("myrm : It is a directory. Please enter the file name. \n");
+		return;
+	}
+	else
+	{
+		setSuperBlock(inode_number, 0);
+		setSuperBlock(SIZE_INODELIST + inode_number, 0);
 
-	deleteInDirectory(inode_number);
+		deleteDirectory(finalStr, inode_number_base);
+		deleteInDirectory(inode_number);
+		initInodeList(inode_number);
 
-	deleteDirectory(finalStr, inode_number_base);
+		printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
 
-	printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
-	
+	}
+
 	free(arg);
 	free(path);
 	free(finalStr);
@@ -225,37 +307,61 @@ void mymkdir(char **commands)
 void myrmdir(char **commands)
 {
 	char *argument = commands[1];
+	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	strcpy(arg, argument);
 
-	if (commands[1] == NULL)
+	int inode_number = findNameToInode(arg);
+
+	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
+	
+	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
+
+	if (inode_number != 0)
+	{
+		printf("FIND!!\n");
+		printf("%d\n", inode_number);
+	}
+	else{
+		printf("myrmdir: Cannot remove: No such file or directory.\n");
+		free(arg);
+		free(path);
+		free(finalStr);
 		return;
-
-	int inode_number = findNameToInode(argument);
-
-	if (inode_number == 0)
-		return;
+	}
 
 	InodeList inode_list = getInodeList(inode_number);
-	DataBlock curDatablock = getDataBlock(inode_number - 1);
-
-	if (inode_list.file_mode != DIRECTORY)
-		return;
-
-	// 디렉토리가 비어있는지 확인
-	if (inode_list.size > 16)
+	if (inode_list.file_mode == GENERAL)
 	{
-		printf("Error: Directory '%s' is not empty.\n", argument);
+		printf("myrmdir: 제거 실패: 디렉터리가 아닙니다\n");
+		free(arg);
+		free(path);
+		free(finalStr);
 		return;
 	}
-
-	setInodeList(working_directory->my_inode_number, 0, 0, 0, 0, 0, 0, 0);
-
-	/*for (int i = 0; i < 32; i++)
+	else if (inode_list.size > 16)
 	{
-		curDatablock.subfiles[i] = 0;
+		printf("myrmdir: 제거 실패: 디렉터리가 비어있지 않음\n");
+		free(arg);
+		free(path);
+		free(finalStr);
+		return;
 	}
+	else
+	{
+		setSuperBlock(inode_number, 0);
+		setSuperBlock(SIZE_INODELIST + inode_number, 0);
 
-	setSuperBlock(inode_number, 0);
-	setSuperBlock(SIZE_INODELIST + inode_number, 0);*/
+		deleteDirectory(finalStr, inode_number_base);
+		deleteInDirectory(inode_number);
+		initInodeList(inode_number);
+
+		printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
+
+	}
+	free(arg);
+	free(path);
+	free(finalStr);
 }
 
 void myls(char **commands)
@@ -325,8 +431,8 @@ void myls(char **commands)
 			{
 				if(*(*(data_block.subfiles+j)+7) == 0)
 					break;
-				strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);
-				*(*(properties_of_children + count_listed_files) + 7) = data_block.subfiles[j][7];
+				strncpy(*(properties_of_children + count_listed_files), *(data_block.subfiles+j), 7);
+				*(*(properties_of_children + count_listed_files) + 7) = *(*(data_block.subfiles+j)+7);
 				count_listed_files++;
 			}
 		}
@@ -339,8 +445,8 @@ void myls(char **commands)
 				{
 					if(*(*(data_block.subfiles+j)+7) == 0)
 						break;
-					strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);
-					*(*(properties_of_children + count_listed_files) + 7) = data_block.subfiles[j][7];
+					strncpy(*(properties_of_children + count_listed_files), *(data_block.subfiles+j), 7);
+					*(*(properties_of_children + count_listed_files) + 7) = *(*(data_block.subfiles+j)+7);
 					count_listed_files++;
 				}
 			}

@@ -30,6 +30,8 @@ struct FunctionCallByString g_command_list[500] =
         commandIntoFunction(myrmdir),
         commandIntoFunction(mymkfs),
         commandIntoFunction(mycpfrom),
+        commandIntoFunction(myrm),
+        commandIntoFunction(mymv),  
         commandIntoFunction(mycat),
         commandIntoFunction(myshowfile),
         commandIntoFunction(mycp),
