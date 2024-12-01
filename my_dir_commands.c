@@ -307,54 +307,61 @@ void mymkdir(char **commands)
 void myrmdir(char **commands)
 {
 	char *argument = commands[1];
+	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	strcpy(arg, argument);
 
-	if (commands[1] == NULL)
-		return;
-	char names[8] = {0, };
-	strcpy(names, argument);
-	int inode_number = findNameToInode(names);
+	int inode_number = findNameToInode(arg);
 
-	if (inode_number == 0)
-		return;
-	InodeList inode_list = getInodeList(inode_number);
-	DataBlock curDatablock = getDataBlock(inode_number - 1);
+	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
+	
+	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
 
-	if (inode_list.file_mode != DIRECTORY){
-		printf("Error : Not a Directory..\n");
-		return;
-	}
-	// 디렉토리가 비어있는지 확인
-	if (inode_list.size > 16)
+	if (inode_number != 0)
 	{
-		printf("Error: Directory '%s' is not empty.\n", names);
+		printf("FIND!!\n");
+		printf("%d\n", inode_number);
+	}
+	else{
+		printf("myrmdir: Cannot remove: No such file or directory.\n");
+		free(arg);
+		free(path);
+		free(finalStr);
 		return;
 	}
 
-    int count = 0;
-    for (int i = 0; i < SIZE_DATABLOCK_IN_SUPERBLOCK; i++) {
-    	if (curDatablock.subfiles[i] != NULL && strlen(curDatablock.subfiles[i]) > 0)
-    	{
-    	    printf("subfile[%d]: %s\n", i, curDatablock.subfiles[i]); 
-            if (strcmp(curDatablock.subfiles[i], ".") != 0 && strcmp(curDatablock.subfiles[i], "..") != 0)
-    	        count++;
-    	}
-    }
-    // 디렉토리가 비어있는지 확인
-    if (count){
-    	printf("Error: Directory '%s' is not empty.\n", names);
-    	    return;
-    }
+	InodeList inode_list = getInodeList(inode_number);
+	if (inode_list.file_mode == GENERAL)
+	{
+		printf("myrmdir: 제거 실패: 디렉터리가 아닙니다\n");
+		free(arg);
+		free(path);
+		free(finalStr);
+		return;
+	}
+	else if (inode_list.size > 16)
+	{
+		printf("myrmdir: 제거 실패: 디렉터리가 비어있지 않음\n");
+		free(arg);
+		free(path);
+		free(finalStr);
+		return;
+	}
+	else
+	{
+		setSuperBlock(inode_number, 0);
+		setSuperBlock(SIZE_INODELIST + inode_number, 0);
 
-	initInodeList(inode_number);
-	deleteInDirectory(inode_number);
-    setSuperBlock(inode_number, 0);
-    setSuperBlock(SIZE_INODELIST + inode_number, 0);
-	int inode_number_base = working_directory -> parent -> my_inode_number;
-	InodeList parent_inode = getInodeList(inode_number_base);
-	deleteDirectory(names, inode_number_base);
-    // // 부모 디렉터리 데이터 블록 업데이트
-    // setDataBlock(working_directory -> parent->my_inode_number - 1, subfile[32]);
-    //setInodeList(working_directory -> parent->my_inode_number, parent_inode.file_mode, parent_inode.access_date, parent_inode.birth_date, parent_inode.size, parent_inode.reference_count, parent_inode.direct_address, parent_inode.single_indirect_address);
+		deleteDirectory(finalStr, inode_number_base);
+		deleteInDirectory(inode_number);
+		initInodeList(inode_number);
+
+		printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
+
+	}
+	free(arg);
+	free(path);
+	free(finalStr);
 }
 
 void myls(char **commands)
