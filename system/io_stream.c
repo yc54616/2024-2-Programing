@@ -209,7 +209,7 @@ void initInodeList(int index) // 1~128
 // reference_count : 다이렉트 포인터, 인다이렉트 포인터  
 void setInodeList(int index, bool file_mode, time_t access_date, time_t birth_date, unsigned int size, unsigned char reference_count, unsigned char *direct_address, unsigned char single_indirect_address) // 1~128
 {																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
-	FILE *file;
+FILE *file;
 	int i;
 	file = fopen(FILENAME, "rb+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector

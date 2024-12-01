@@ -9,8 +9,14 @@
 
 time_t getCurTime();
 int getNeededDirectAdressNumber(char*);
-int allocateInodeForNewFiles(char*, int);
+int allocateInodeForNewFiles(char* , int , int, int);
+int allocateSingleIndirectBlock();
 void writeFileContents(char* , int , int );
+void getFileContents(int, unsigned char * );
 char getAllDirectAdressWithSourceFileName(char* , int );
-char* getFileContentsWithSourceFileName(char* );
+char* getFileContentsWithSourceFileName(char* , bool);
+void mycat(char**);
+void myshowfile(char** );
+void mycp(char** );
+void mycpto(char** );
 void mycpfrom(char**);

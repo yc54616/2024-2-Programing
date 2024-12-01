@@ -48,7 +48,7 @@ void mymv(char **commands)
 		free(new_name);
 		return;
 	}
-	deleteDirectory(finalStr, inode_number_base);//원래 위치에 있는 파일/디렉토리 이름 지우기
+	//원래 위치에 있는 파일/디렉토리 이름 지우기
 	
 	printf("new_name : %s\n", new_name);
 	int new_inode_number = findNameToInode(new_name);	
@@ -62,12 +62,15 @@ void mymv(char **commands)
 		printf("new_inode_number FIND!! %d\n", inode_number);
 		
 		printf("%d\n", new_inode_number);
-		if (inode_list.file_mode == DIRECTORY)
+		if (inode_list.file_mode == DIRECTORY){
+			deleteDirectory(finalStr, inode_number_base);
 			writeDirectory(writeName, new_inode_number, DIRECTORY);
+		}
 		else
-			writeDirectory(writeName, new_inode_number, GENERAL);
+			printf("파일을 옮길 수 없습니다.\n");
 	}
 	else {//파일 이름을 바꾸는 경우
+		deleteDirectory(finalStr, inode_number_base);
 		InodeList inode_list = getInodeList(inode_number);
 		unsigned char writeName[8] = {0,};
 		for(int i = 0;i < 7; i++)
@@ -457,7 +460,7 @@ void myls(char **commands)
 		{
 			InodeList inode = getInodeList(*(*(properties_of_children+i)+7));
 			struct tm *pt = localtime(&inode.access_date);
-			printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
+			printf("%02d/%02d/%02d %02d:%02d:%02d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
 			printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
 			printf("%d\t", *(*(properties_of_children+i)+7));
 			printf("%d byte  ", inode.size);

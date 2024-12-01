@@ -1,6 +1,6 @@
 
 #include "header.h"
-
+#include "hamjoohyuk_commands.h"
 #include "my_dir_commands.h"
 #include "hamjoohyuk_commands.h"
 
@@ -32,6 +32,10 @@ struct FunctionCallByString g_command_list[500] =
         commandIntoFunction(mycpfrom),
         commandIntoFunction(myrm),
         commandIntoFunction(mymv),  
+        commandIntoFunction(mycat),
+        commandIntoFunction(myshowfile),
+        commandIntoFunction(mycp),
+        commandIntoFunction(mycpto),
     };
 void Print_ID(char *computerId, char *userId);
 void Print_WD();

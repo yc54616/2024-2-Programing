@@ -197,7 +197,6 @@ int main(void)
         Print_WD();
 	/* 의 신 */
 	printf("]$ ");
-
         GetInput(&inputString);
         if (inputString[0] == '\0') // 입력값이 없을 경우 continue;
             continue;
