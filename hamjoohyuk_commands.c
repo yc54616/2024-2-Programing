@@ -642,87 +642,64 @@ void mycp(char **commands)
 
 void mycpto(char **commands)
 {
-    char *source_file;
-    char *host_dest_file;
-
-    if (*(commands + 1) == NULL)
-    {
-        printf("인자가 불충분합니다.");
-        return;
-    }
-    else if (strlen(*(commands + 1)) > 7)
-    {
-        printf("그런 파일이 없습니다.");
-        return;
-    }
-    if (*(commands + 2) == NULL)
+    if (*(commands + 1) == NULL || *(commands + 2) == NULL) 
     {
         printf("인자가 불충분합니다.");
         return;
     }
 
-    source_file = malloc(sizeof(char) * strlen(commands[1]) + 1);
-    host_dest_file = malloc(sizeof(char) * strlen(commands[2]) + 1);
-
-    strcpy(source_file, *(commands + 1));
+    unsigned char *source_file = (unsigned char *)calloc(sizeof(unsigned char), strlen(*(commands + 1)));
+    unsigned char *host_dest_file = (unsigned char *)calloc(sizeof(unsigned char), strlen(*(commands + 2)));
+	strcpy(source_file, *(commands + 1));
     strcpy(host_dest_file, *(commands + 2));
 
-    char *source_file_content = (char *)calloc(256 * 8 + 1, sizeof(char) + 2);
-    char *sliced_source_file_content = (char *)calloc(256 * 8, sizeof(char) + 2);
-    char *source_indirect_content = NULL;
-    char *sliced_source_indirect_content = NULL;
-    bool is_indirect_block_used = false;
+	int inode_number = findNameToInode(source_file);
 
-    if (getUsingIndirectBlock(source_file))
-    {
-        is_indirect_block_used = true;
-        int using_indirect_block_number = getUsingIndirectBlock(source_file);
-        sliced_source_file_content = (char *)realloc(sliced_source_file_content, (256 * 8 + 256 * using_indirect_block_number + 1) * sizeof(char) + 2);
-    }
-
-    strcpy(source_file_content, getFileContentsWithSourceFileName(source_file, true));
-    strncpy(sliced_source_file_content, source_file_content, strlen(source_file_content) - (7 - (strlen(source_file_content) / 256)));
-
-    if (is_indirect_block_used)
-    {
-        source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file) + 1, sizeof(char) + 2);
-        sliced_source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file) + 1, sizeof(char) + 2);
-        strcpy(source_indirect_content, getIndirectBlockContentsWithSourceFileName(source_file));
-        strncpy(sliced_source_indirect_content, source_indirect_content, strlen(source_indirect_content) - getUsingIndirectBlock(source_file));
-        // strcpy(sliced_source_indirect_content, source_indirect_content);
-        strcat(sliced_source_file_content, sliced_source_indirect_content);
-        if (source_indirect_content != NULL)
-        {
-            free(source_indirect_content);
-            source_indirect_content = NULL;
-        }
-        if (sliced_source_indirect_content != NULL)
-        {
-            free(sliced_source_indirect_content);
-            sliced_source_indirect_content = NULL;
-        }
-    }
-
-    FILE *host_txt;
-    host_txt = fopen(host_dest_file, "w+");
-    if (host_txt == NULL)
-    {
-        printf("호스트 파일을 만들거나 열 수 없습니다.\n");
+    if(inode_number == 0){
+        printf("mycat: 그런 파일이나 디렉터리가 없습니다\n");
+        free(source_file);
+        free(host_dest_file);
         return;
     }
-    for (int i = 0; i < strlen(sliced_source_file_content); i++)
-    {
-        fputc(*(sliced_source_file_content + i), host_txt);
-    }
-    fclose(host_txt);
-    if (source_file != NULL)
+
+    InodeList inodeList = getInodeList(inode_number);
+
+    if(inodeList.file_mode == DIRECTORY){
+        printf("mycat: 파일이 아닙니다\n");
         free(source_file);
-    if (host_dest_file != NULL)
         free(host_dest_file);
-    if (source_file_content != NULL)
-        free(source_file_content);
-    if (sliced_source_file_content != NULL)
-        free(sliced_source_file_content);
+        return;
+    }
+
+    FILE *fp = fopen(host_dest_file, "w");
+
+    for (int i = 0; i < inodeList.reference_count; i++)
+	{
+        DataBlock datablock = getDataBlock(*(inodeList.direct_address+i));
+        for(int j = 0; j < 256; j++){
+            if(*(datablock.contents+j) == '\0')
+                break;
+            fprintf(fp, "%c", *(datablock.contents+j));
+        }
+	}
+
+    if(inodeList.single_indirect_address != 0){
+        DataBlock singleInodeList = getDataBlock(inodeList.single_indirect_address);
+        int indirect_point_cnt = *(singleInodeList.contents);
+        for (int i = 1; i <= indirect_point_cnt; i++)
+        {
+            DataBlock datablock = getDataBlock(*(singleInodeList.contents+i));
+		    for(int j = 0; j < 256; j++){
+                if(*(datablock.contents+j) == '\0' || *(datablock.contents+j) == '\t')
+                    break;
+		        fprintf(fp, "%c", *(datablock.contents+j));
+            }
+        }
+    }
+
+    fclose(fp);
+    free(source_file);
+    free(host_dest_file);
 }
 
 void mycpfrom(char **commands)
