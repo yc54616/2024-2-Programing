@@ -3,37 +3,435 @@
  * 2. the function for directory
  */
 #include "data_struct.h"
-#include  <malloc.h>
+#include <malloc.h>
 
 /* definition of global variable */
 chainedDirectory *working_directory;
 int depth_working_directory;
 
+// inode : FILE inode address -> datablock만 지움
+void deleteInDirectory(int inode){
+	InodeList inodeList = getInodeList(inode);
+	DataBlock cntDataBlock;
+	int indirect_point_cnt = 0;
+	if(inodeList.single_indirect_address != 0){
+		cntDataBlock = getDataBlock(inodeList.single_indirect_address);
+		indirect_point_cnt = *(cntDataBlock.contents);
+	}
+
+	for (int i = 0; i < inodeList.reference_count - indirect_point_cnt; i++)
+	{
+		initDataBlock(*(inodeList.direct_address+i));
+	}
+
+	bool indirectAddressUse = (inodeList.reference_count > SIZE_DIRECT_POINTER) ? true : false;
+
+	if (indirectAddressUse)
+	{
+		if(inodeList.single_indirect_address != 0){
+			for (int i = 1; i <= indirect_point_cnt; i++)
+			{
+				initDataBlock(*(cntDataBlock.contents+i));
+			}
+		}
+		initDataBlock(inodeList.single_indirect_address);
+	}
+}
+
+// inode 안에 directs, single_indirect_address 돌며 name 지우기
+// 중간의 값을 지우면 데이터 당겨주기
+void deleteDirectory(char *name, int inode)
+{
+	InodeList inodeList = getInodeList(inode);
+	DataBlock cntDataBlock;
+	int indirect_point_cnt = 0;
+	if(inodeList.single_indirect_address != 0){
+		cntDataBlock = getDataBlock(inodeList.single_indirect_address);
+		indirect_point_cnt = *(cntDataBlock.contents);
+	}
+	time_t curTime;
+	time(&curTime);
+
+	unsigned char endStr[8] = {0,};
+	
+	bool indirectAddressUse = (inodeList.reference_count > SIZE_DIRECT_POINTER) ? true : false;
+
+	if (indirectAddressUse)
+	{
+		DataBlock dataTmp = getDataBlock(cntDataBlock.contents[indirect_point_cnt]);
+
+		printf("cntDataBlock.contents[indirect_point_cnt] : %d\n", cntDataBlock.contents[indirect_point_cnt]);
+
+		for(int k = 0; k < 8; k++)
+			endStr[k] = dataTmp.contents[(inodeList.size-8)%256+k];
+
+		printf("endStr : ");
+		for(int k = 0; k < 7; k++)
+			printf("%c", endStr[k]);
+		printf(" %d", endStr[7]);
+		
+		deleteDirectoryDataBlock(cntDataBlock.contents[indirect_point_cnt], (inodeList.size-8)%256); // data block 마지막 지우기 
+		inodeList.size -= 8;
+
+		if(inodeList.size%256 == 0 && indirect_point_cnt == 1){ // indirect 주소가 마지막 1개 남았는데 지워졌을 때
+			setSuperBlock(SIZE_INODELIST+cntDataBlock.contents[indirect_point_cnt], 0); // 데이터 블럭 해제
+			initDataBlock(cntDataBlock.contents[indirect_point_cnt]); // 데이터 블럭 초기화
+			setSuperBlock(SIZE_INODELIST+inodeList.single_indirect_address, 0); // indirect 데이터 블럭 해제
+			initDataBlock(inodeList.single_indirect_address); // indirect 데이터 블럭 초기화
+			inodeList.single_indirect_address = 0;
+			inodeList.reference_count -= 1;
+		}
+		else if(inodeList.size%256 == 0){ // indirect 주소 dataaddress가 한개인데 지워졌을 때
+			setSuperBlock(SIZE_INODELIST+cntDataBlock.contents[indirect_point_cnt], 0); // 데이터 블럭 해제
+			initDataBlock(cntDataBlock.contents[indirect_point_cnt]); // 데이터 블럭 초기화
+			cntDataBlock.contents[cntDataBlock.contents[0]] = 0;
+			cntDataBlock.contents[0] -= 1;
+			setDataBlock(inodeList.single_indirect_address, cntDataBlock.contents);
+			inodeList.reference_count -= 1;
+		}
+
+		setInodeList(inode, DIRECTORY, curTime, inodeList.birth_date, inodeList.size, inodeList.reference_count, inodeList.direct_address, inodeList.single_indirect_address); // data block 마지막 지우기 
+
+		inodeList = getInodeList(inode);
+		indirect_point_cnt = 0;
+		if(inodeList.single_indirect_address != 0){
+			cntDataBlock = getDataBlock(inodeList.single_indirect_address);
+			indirect_point_cnt = *(cntDataBlock.contents);
+		}
+
+		for (int i = 0; i < inodeList.reference_count - indirect_point_cnt; i++)
+		{
+			DataBlock data_block = getDataBlock(*(inodeList.direct_address+i));
+
+			for(int j = 0; j < SIZE_DATABLOCK/8; j++){
+				if(strncmp(name, data_block.subfiles[j], 7) == 0){
+					writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address+i), j*8);
+					printf("find!!\n");
+					printf("%s\n", name);
+					writeDirectoryDataBlock(endStr, *(inodeList.direct_address+i), j*8);
+				}
+			}
+		}
+		if(inodeList.single_indirect_address != 0){
+			for (int i = 1; i <= indirect_point_cnt; i++)
+			{
+				DataBlock data_block = getDataBlock(*(cntDataBlock.contents+i));
+
+				for(int j = 0; j < SIZE_DATABLOCK/8; j++){
+					if(strncmp(name, data_block.subfiles[j], 7) == 0){
+						writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address+i), j*8);
+						printf("find!!\n");
+						printf("%s\n", name);
+						writeDirectoryDataBlock(endStr, cntDataBlock.contents[indirect_point_cnt], j*8);
+					}
+				}
+			}
+		}
+		
+
+		
+	}
+	else // directs 주소에 저장할 때 
+	{
+		DataBlock dataTmp = getDataBlock(inodeList.direct_address[inodeList.reference_count-1]);
+
+		for(int k = 0; k < 8; k++)
+			endStr[k] = dataTmp.contents[(inodeList.size-8)%256+k];
+	
+		printf("endStr : ");
+		for(int k = 0; k < 7; k++)
+			printf("%c", endStr[k]);
+		printf(" %d", endStr[7]);
+		
+		deleteDirectoryDataBlock(inodeList.direct_address[inodeList.reference_count-1], (inodeList.size-8)%256); // data block 마지막 지우기 
+		inodeList.size -= 8;
+
+		if(inodeList.size%256 == 0){
+			setSuperBlock(SIZE_INODELIST+inodeList.direct_address[inodeList.reference_count-1], 0);
+			initDataBlock(inodeList.direct_address[inodeList.reference_count-1]);
+			inodeList.direct_address[inodeList.reference_count-1] = 0;
+			inodeList.reference_count -= 1;
+		}
+
+		setInodeList(inode, DIRECTORY, curTime, inodeList.birth_date, inodeList.size, inodeList.reference_count, inodeList.direct_address, inodeList.single_indirect_address); // data block 마지막 지우기 
+
+		inodeList = getInodeList(inode);
+
+		for (int i = 0; i < inodeList.reference_count - indirect_point_cnt; i++)
+		{
+			DataBlock data_block = getDataBlock(*(inodeList.direct_address+i));
+
+			for(int j = 0; j < SIZE_DATABLOCK/8; j++){
+				if(strncmp(name, data_block.subfiles[j], 7) == 0){
+					writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address+i), j*8);
+					printf("find!!\n");
+					printf("%s\n", name);
+					writeDirectoryDataBlock(endStr, *(inodeList.direct_address+i), j*8);
+				}
+			}
+		}
+	}
+
+	
+
+	
+}
+
+// name : 디렉토리 이름, 마지막 바이트에는 가리키는 inode ex) lo     7
+// inode : inode 가 가리키는 datablock 들
+// 현재 wokring 디렉토리에 문자를 쓰도록 설계됨
+void writeDirectory(char *name, int inode, int type)
+{
+	InodeList inode_list = getInodeList(inode);	
+	time_t curTime;
+	time(&curTime);
+	int useDataBlockInode, indirectAddress;
+
+	bool indirectAddressUse = ((inode_list.reference_count > SIZE_DIRECT_POINTER) || (inode_list.reference_count == SIZE_DIRECT_POINTER && inode_list.size%256 == 0)) ? true : false;
+
+	if (indirectAddressUse)
+	{
+		if(inode_list.single_indirect_address == 0){ // 처음 indirect_address 에 저장할 때, indirect_address으로 사용할 데이터 block 찾기
+			useDataBlockInode = findEmptyDataBlock();
+			inode_list.single_indirect_address = useDataBlockInode;			
+			setSuperBlock(SIZE_INODELIST + useDataBlockInode + 1, 1);
+		}
+		else{
+			useDataBlockInode = inode_list.single_indirect_address; // 이미 indirect_address 가 지정되어 있을 때
+		}
+
+		if(inode_list.size%256 == 0){ // 새로운 데이터 블럭을 생성해야 할 때
+			indirectAddress = findEmptyDataBlock();
+			inode_list.reference_count += 1;
+			setSuperBlock(SIZE_INODELIST + indirectAddress + 1, 1);
+			writeIndirectDataBlock(indirectAddress, useDataBlockInode);
+		}
+
+		DataBlock db = getDataBlock(useDataBlockInode);
+		indirectAddress = db.contents[db.contents[0]]; // indirect_address은 데이터블럭의 [0]이 크기를 저장함
+		printf("indirectAddress : %d\n", indirectAddress);
+		writeDirectoryDataBlock(name, indirectAddress, (inode_list.size)%256);
+		setInodeList(inode, type, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
+		
+	}
+	else // directs 주소에 저장할 때 
+	{
+		if(inode_list.size%256 == 0){
+			useDataBlockInode = findEmptyDataBlock();
+			inode_list.direct_address[inode_list.reference_count] = useDataBlockInode;
+			inode_list.reference_count += 1;
+			setSuperBlock(SIZE_INODELIST + useDataBlockInode + 1, 1);
+		}
+
+		writeDirectoryDataBlock(name, inode_list.direct_address[inode_list.reference_count - 1], inode_list.size%256);
+		setInodeList(inode, type, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
+	}
+}
 
 int getNowWorkingDirectoryInodeNumber() {
 	return working_directory->my_inode_number;
 }
 
-unsigned char findDictoryNameToInode(char *argument)
+// return 값은 최종 디렉토리 inode, finalStr에 값이 마지막 이름이 담김, 존재하지 않은 파일이나, 디렉토리만 사용가능
+// ../../../a -> 라면 ../../../ 의 디렉토리 indoe가 return, finalStr에는 a 문자열이 담김 
+// argument : 인자값 
+// tmpStr : 빈 배열
+unsigned char findNameToBaseInode(char *argument, unsigned char *tmpPath, unsigned char *tmpFinalStr)
 {
-	char names[8];
-	strcpy(names, argument);
-	DataBlock data_block = getDataBlock(working_directory->my_inode_number - 1);
-	InodeList inodelist = getInodeList(working_directory->my_inode_number);
-	
-	char compareStr[8];
+	unsigned char *path = NULL;
+	unsigned char *ptmp = NULL;
+	unsigned char *finalStr = NULL;
+	bool flag = false;
 
-	for(int i = 2; i < (inodelist.size)/8; i++)
-	{
-		memset(compareStr, 0, sizeof(compareStr));
-		for (int j = 0; j < 7; j++)
+	if(argument == NULL){
+		return 0;
+	}
+
+	path = (unsigned char *)malloc(sizeof(unsigned char) * strlen(argument));
+	ptmp = (unsigned char *)malloc(sizeof(unsigned char) * strlen(argument));
+	strcpy(path, argument);
+	strcpy(ptmp, argument);
+
+	for (char *p = strtok(ptmp, "/"); p!=NULL; p = strtok(NULL, "/")){
+		finalStr = (unsigned char *)realloc(finalStr, sizeof(unsigned char) * strlen(p));
+		strcpy(finalStr, p);
+	}
+
+	for(int i = 0;  i < strlen(finalStr); i++){
+		path[strlen(argument) - i - 1] = 0;
+	}
+
+	strcpy(tmpPath, path);
+
+	chainedDirectory *virtual_working_directory;
+	int virtual_depth_working_directory = depth_working_directory;
+	copyWorkingDirectory(&virtual_working_directory);
+	
+	if(cd(&virtual_working_directory, &virtual_depth_working_directory, path) == 0){
+		free(path);
+		free(ptmp);
+		free(finalStr);
+		return 0;
+	}
+
+	free(path);
+	free(ptmp);
+	
+	if(strcmp(finalStr, "..") == 0){
+		free(finalStr);
+		return 0;
+	}
+	else if(strcmp(finalStr, ".") == 0){
+		free(finalStr);
+		return 0;
+	}
+	
+	if(strlen(finalStr) > 7){
+		free(finalStr);
+		return 0;
+	}
+	
+	strcpy(tmpFinalStr, finalStr);
+	free(finalStr);
+
+	return virtual_working_directory->my_inode_number;
+}
+
+unsigned char findNameToInode(char *argument)
+{
+	unsigned char *path = NULL;
+	unsigned char *ptmp = NULL;
+	unsigned char *finalStr = NULL;
+	bool flag = false;
+	bool first = false;
+
+	if(argument == NULL){
+		return 0;
+	}
+
+	path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	ptmp = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
+	strcpy(path, argument);
+	strcpy(ptmp, argument);
+	
+	for (char *p = strtok(ptmp, "/"); p!=NULL; p = strtok(NULL, "/")){
+		finalStr = (unsigned char *)realloc(finalStr, sizeof(unsigned char) * strlen(p));
+		strcpy(finalStr, p);
+	}
+	
+	for(int i = 0;  i < strlen(finalStr); i++){
+		path[strlen(argument) - i - 1] = 0;
+	}
+
+	chainedDirectory *virtual_working_directory;
+	int virtual_depth_working_directory = depth_working_directory;
+	copyWorkingDirectory(&virtual_working_directory);
+
+	if(cd(&virtual_working_directory, &virtual_depth_working_directory, path) == 0){
+		free(path);
+		free(ptmp);
+		free(finalStr);
+		return 0;
+	}
+
+	free(path);
+	free(ptmp);
+	
+	if(strcmp(finalStr, "..") == 0){
+		free(finalStr);
+		return virtual_working_directory->parent->my_inode_number;
+	}
+	else if(strcmp(finalStr, ".") == 0){
+		free(finalStr);
+		return virtual_working_directory->my_inode_number;
+	}
+	
+	if(strlen(finalStr) > 7){
+		free(finalStr);
+		return 0;
+	}
+	else if(finalStr == NULL){
+		free(finalStr);
+		return 0;
+	}
+
+	InodeList inodelist = getInodeList(virtual_working_directory->my_inode_number);
+	DataBlock cntDataBlock;
+	int indirect_point_cnt = 0;
+	if(inodelist.single_indirect_address != 0){
+		cntDataBlock = getDataBlock(inodelist.single_indirect_address);
+		indirect_point_cnt = *(cntDataBlock.contents);
+	}
+
+	char compareStr[8] = {0,};
+	for(int i = 0; i < inodelist.reference_count - indirect_point_cnt; i++){
+		DataBlock data_block = getDataBlock(*(inodelist.direct_address+i));
+
+		int cnt = 0;
+		int *inodes = NULL;
+		for (int i = 0; i < sizeof(DataBlock); i++)
 		{
-			compareStr[j] = data_block.contents[i*8+j];
+			if ((i + 1) % 8 == 0 && *(data_block.contents+i) != 0)
+			{
+				cnt++;
+				inodes = (int *)realloc(inodes, sizeof(int) * cnt);
+				*(inodes + (cnt - 1)) = *(data_block.contents + i);
+			}
 		}
-		if (strcmp(compareStr, names) == 0){
-			return data_block.contents[i*8+7];
+
+		for(int i = 1; i < cnt; i++){
+			memset(compareStr, 0, sizeof(compareStr));
+			for (int j = 0; j < 7; j++)
+			{
+				compareStr[j] = data_block.contents[i * 8 + j];
+			}
+			if (strcmp(compareStr, finalStr) == 0)
+			{
+				free(finalStr);
+				free(inodes);
+				return data_block.contents[i * 8 + 7];
+			}
+		}
+
+		free(inodes);
+	}
+
+	if(inodelist.single_indirect_address != 0){
+		for (int i = 1; i <= indirect_point_cnt; i++)
+		{
+			DataBlock data_block = getDataBlock(*(cntDataBlock.contents+i));
+
+			int cnt = 0;
+			int *inodes = NULL;
+			for (int i = 0; i < sizeof(DataBlock); i++)
+			{
+				if ((i + 1) % 8 == 0 && *(data_block.contents+i) != 0)
+				{
+					cnt++;
+					inodes = (int *)realloc(inodes, sizeof(int) * cnt);
+					*(inodes + (cnt - 1)) = *(data_block.contents + i);
+				}
+			}
+
+			for(int i = 1; i < cnt; i++){
+				memset(compareStr, 0, sizeof(compareStr));
+				for (int j = 0; j < 7; j++)
+				{
+					compareStr[j] = data_block.contents[i * 8 + j];
+				}
+				if (strcmp(compareStr, finalStr) == 0)
+				{
+					free(finalStr);
+					free(inodes);
+					return data_block.contents[i * 8 + 7];
+				}
+			}
+
+			free(inodes);
 		}
 	}
+
+	free(finalStr);
 
 	return 0;
 }
@@ -389,26 +787,31 @@ void myinode(char **commands)
 	char c;
 	int i;
 	int direct_pointer_count;
-	
-	if (commands[1] == NULL) {
+
+	if (commands[1] == NULL)
+	{
 		errmsg("The first argument must be filled!\n");
 		return;
 	}
 
-	for (i = 0; (c = commands[1][i]) != '\0'; i++) {
-		if (c < '0' || c > '9') {
+	for (i = 0; (c = commands[1][i]) != '\0'; i++)
+	{
+		if (c < '0' || c > '9')
+		{
 			errmsg("The first arg must be positive integer format!\n");
 			return;
 		}
 	}
 
-	if (i == 0) {
+	if (i == 0)
+	{
 		errmsg("The first arg must be filled!\n");
 		return;
 	}
 
 	inode_number = strtol(commands[1], NULL, 10);
-	if (! (inode_number >= 1 && inode_number <= SIZE_INODELIST)) {
+	if (!(inode_number >= 1 && inode_number <= SIZE_INODELIST))
+	{
 		errmsg("The first arg must be in the (closed) section-[1, %d]!\n", SIZE_INODELIST);
 		return;
 	}
@@ -423,39 +826,47 @@ void myinode(char **commands)
 		printf("  #%d 직접 데이터 블록 : %d\n", i, inode_list.direct_address[i]);
 	printf("간접 블록 번호 : %d\n", inode_list.single_indirect_address);
 }
-void mydatablock(char **commands) {
+void mydatablock(char **commands)
+{
 	int block_address;
 	DataBlock data_block;
 	char c;
 	int i;
-	
-	if (commands[1] == NULL) {
+
+	if (commands[1] == NULL)
+	{
 		errmsg("The first argument must be filled!\n");
 		return;
 	}
 
-	for (i = 0; (c = commands[1][i]) != '\0'; i++) {
-		if (c < '0' || c > '9') {
+	for (i = 0; (c = commands[1][i]) != '\0'; i++)
+	{
+		if (c < '0' || c > '9')
+		{
 			errmsg("The first arg must be positive integer format!\n");
 			return;
 		}
 	}
 
-	if (i == 0) {
+	if (i == 0)
+	{
 		errmsg("The first arg must be filled!\n");
 		return;
 	}
 
 	block_address = strtol(commands[1], NULL, 10);
-	if (! (block_address >= 0 && block_address <= SIZE_DATABLOCK - 1)) {
+	if (!(block_address >= 0 && block_address <= SIZE_DATABLOCK - 1))
+	{
 		errmsg("The first arg must be in the (closed) section-[0, %d]!\n", SIZE_DATABLOCK - 1);
 		return;
 	}
-	
+
 	data_block = getDataBlock(block_address);
 	for (i = 0; i < sizeof(data_block); i++) printf("%c", data_block.contents[i]);
 	printf("\n");
 }
+void mystatus(char **commands)
+{
 
 void mystatus(char **commands) {
 	SuperBlock super_block;
@@ -463,13 +874,15 @@ void mystatus(char **commands) {
 	int index;
 	int loop_size;
 	int used;
-	Byte * map;
-	
+	Byte *map;
+
 	super_block = getSuperBlock();
 	used = 0;
 	map = (Byte *)malloc(sizeof(Byte) * SIZE_INODELIST_IN_SUPERBLOCK);
-	for (i = 0; i < SIZE_INODELIST_IN_SUPERBLOCK; i++) {
-		for (j = 0; j < 8; j++) {
+	for (i = 0; i < SIZE_INODELIST_IN_SUPERBLOCK; i++)
+	{
+		for (j = 0; j < 8; j++)
+		{
 			map[i].for_shift <<= 1;
 			map[i].last_bit = super_block.inode_list[i].first_bit;
 			if (super_block.inode_list[i].first_bit)
@@ -484,15 +897,19 @@ void mystatus(char **commands) {
 	printf("    Available : %d\n", SIZE_INODELIST - used);
 	printf("    Inode Map :\n");
 	index = 0;
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < 2; i++)
+	{
 		printf("        ");
-		for (j = 0, loop_size = SIZE_INODELIST_IN_SUPERBLOCK / 2; j < loop_size; j++) {
-			for (k = 0; k < 4; k++) {
+		for (j = 0, loop_size = SIZE_INODELIST_IN_SUPERBLOCK / 2; j < loop_size; j++)
+		{
+			for (k = 0; k < 4; k++)
+			{
 				printf("%d", map[index].first_bit);
 				map[index].for_shift <<= 1;
 			}
 			printf(" ");
-			for ( ; k < 8; k++) {
+			for (; k < 8; k++)
+			{
 				printf("%d", map[index].first_bit);
 				map[index].for_shift <<= 1;
 			}
@@ -505,8 +922,10 @@ void mystatus(char **commands) {
 
 	used = 0;
 	map = (Byte *)malloc(sizeof(Byte) * SIZE_DATABLOCK_IN_SUPERBLOCK);
-	for (i = 0; i < SIZE_DATABLOCK_IN_SUPERBLOCK; i++) {
-		for (j = 0; j < 8; j++) {
+	for (i = 0; i < SIZE_DATABLOCK_IN_SUPERBLOCK; i++)
+	{
+		for (j = 0; j < 8; j++)
+		{
 			map[i].for_shift <<= 1;
 			map[i].last_bit = super_block.data_block[i].first_bit;
 			if (super_block.data_block[i].first_bit)
@@ -519,18 +938,22 @@ void mystatus(char **commands) {
 	printf("Data Block state : \n");
 	printf("    Total : %d blocks / %ld bytes\n", SIZE_DATABLOCK, SIZE_DATABLOCK * sizeof(DataBlock));
 	printf("    Used : %d / %ld bytes\n", used, used * sizeof(DataBlock));
-	printf("    Available : %d / %ld bytes\n", SIZE_DATABLOCK - used, ( SIZE_DATABLOCK - used ) * sizeof(DataBlock));
+	printf("    Available : %d / %ld bytes\n", SIZE_DATABLOCK - used, (SIZE_DATABLOCK - used) * sizeof(DataBlock));
 	printf("    Data Block Map :\n");
 	index = 0;
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 4; i++)
+	{
 		printf("        ");
-		for (j = 0, loop_size = SIZE_DATABLOCK_IN_SUPERBLOCK / 4; j < loop_size; j++) {
-			for (k = 0; k < 4; k++) {
+		for (j = 0, loop_size = SIZE_DATABLOCK_IN_SUPERBLOCK / 4; j < loop_size; j++)
+		{
+			for (k = 0; k < 4; k++)
+			{
 				printf("%d", map[index].first_bit);
 				map[index].for_shift <<= 1;
 			}
 			printf(" ");
-			for ( ; k < 8; k++) {
+			for (; k < 8; k++)
+			{
 				printf("%d", map[index].first_bit);
 				map[index].for_shift <<= 1;
 			}
@@ -542,4 +965,3 @@ void mystatus(char **commands) {
 	printf("\n");
 	free(map);
 }
-

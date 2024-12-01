@@ -29,8 +29,12 @@ struct FunctionCallByString
 };
 
 /* functions */
+void deleteInDirectory(int inode);
+void deleteDirectory(char *name, int inode);
+void writeDirectory(char *name, int inode, int type);
 int getNowWorkingDirectoryInodeNumber();
-unsigned char findDictoryNameToInode(char * argument);
+unsigned char findNameToBaseInode(char *argument, unsigned char *tmpPath, unsigned char *tmpFinalStr);
+unsigned char findNameToInode(char * argument);
 int compare_directory_names(unsigned char *, unsigned char *);
 int getExistence(unsigned char *);
 /* To move the first-second parameter-what you want to move

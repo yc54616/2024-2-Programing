@@ -31,7 +31,7 @@ int allocateInodeForNewFiles(char* new_file_name, int direct_adress_number, int 
     int directory_inode_number = getNowWorkingDirectoryInodeNumber();
     int now_working_directory_inode_number = getNowWorkingDirectoryInodeNumber();
     int start_index = 0;
-    char new_file_name_for_save[8];
+    char new_file_name_for_save[8] = {0,};
     setSuperBlock(new_inode_list_index, 1);
     time_t cur_time;
 	time(&cur_time);
@@ -52,10 +52,8 @@ int allocateInodeForNewFiles(char* new_file_name, int direct_adress_number, int 
 
     strcpy(new_file_name_for_save, new_file_name);
     for(int i = 0; i < 7 - strlen(new_file_name); i++) strcat(new_file_name_for_save, "\0");
-    inode_list = getInodeList(now_working_directory_inode_number);
     new_file_name_for_save[7] = new_inode_list_index;
-    writeDirectoryDataBlock(new_file_name_for_save, inode_list.direct_address[0], inode_list.size);
-    setInodeList(now_working_directory_inode_number, 1, cur_time, inode_list.birth_date, inode_list.size+8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
+    writeDirectory(new_file_name_for_save, now_working_directory_inode_number, GENERAL);
     return new_inode_list_index;
 }
 
@@ -679,7 +677,7 @@ void mycpfrom(char** commands) {
     }
 
     host_source_file = malloc(sizeof(char) * strlen(commands[1]) + 1);
-    dest_file = malloc(sizeof(char) * strlen(commands[2]) + 1);
+    dest_file = calloc(sizeof(char), 8);
     strcpy(host_source_file, commands[1]);
     strcpy(dest_file, commands[2]);
     SuperBlock super_block = getSuperBlock();
@@ -705,6 +703,7 @@ void mycpfrom(char** commands) {
     file_count = fread(buffer, host_txt_size, 1, host_txt);    
 
     getNeededDirectAdressNumber(buffer);
+    inode_list_address_of_dest_file = allocateInodeForNewFiles(dest_file, getNeededDirectAdressNumber(buffer), strlen(buffer));
     inode_list_address_of_dest_file = allocateInodeForNewFiles(dest_file, getNeededDirectAdressNumber(buffer), strlen(buffer));
     writeFileContents(buffer, inode_list_address_of_dest_file, getNeededDirectAdressNumber(buffer));
 

@@ -4,6 +4,7 @@
 #	define __COMMANDS2_H__ 1
 
 /* functions */
+void myrm(char **commands);
 void mymkfs(char **commands);
 void mytouch(char **commands);
 void mymkdir(char **commands);
