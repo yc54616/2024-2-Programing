@@ -52,16 +52,23 @@ void mymv(char **commands)
 	
 	printf("new_name : %s\n", new_name);
 	int new_inode_number = findNameToInode(new_name);	
-	InodeList inode_list = getInodeList(inode_number);
+	
 	if (new_inode_number != 0){//위치를 옮기는 경우
-		printf("new_inode_number FIND!!\n");
+		InodeList inode_list = getInodeList(new_inode_number);
+		unsigned char writeName[8] = {0,};
+		for(int i = 0;i < 7; i++)
+			writeName[i] = finalStr[i];
+		writeName[7] = inode_number;
+		printf("new_inode_number FIND!! %d\n", inode_number);
+		
 		printf("%d\n", new_inode_number);
 		if (inode_list.file_mode == DIRECTORY)
-			writeDirectory(finalStr, new_inode_number, DIRECTORY);
+			writeDirectory(writeName, new_inode_number, DIRECTORY);
 		else
-			writeDirectory(finalStr, new_inode_number, GENERAL);
+			writeDirectory(writeName, new_inode_number, GENERAL);
 	}
 	else {//파일 이름을 바꾸는 경우
+		InodeList inode_list = getInodeList(inode_number);
 		unsigned char writeName[8] = {0,};
 		for(int i = 0;i < 7; i++)
 			writeName[i] = new_name[i];
@@ -417,8 +424,8 @@ void myls(char **commands)
 			{
 				if(*(*(data_block.subfiles+j)+7) == 0)
 					break;
-				strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);
-				*(*(properties_of_children + count_listed_files) + 7) = data_block.subfiles[j][7];
+				strncpy(*(properties_of_children + count_listed_files), *(data_block.subfiles+j), 7);
+				*(*(properties_of_children + count_listed_files) + 7) = *(*(data_block.subfiles+j)+7);
 				count_listed_files++;
 			}
 		}
@@ -431,8 +438,8 @@ void myls(char **commands)
 				{
 					if(*(*(data_block.subfiles+j)+7) == 0)
 						break;
-					strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);
-					*(*(properties_of_children + count_listed_files) + 7) = data_block.subfiles[j][7];
+					strncpy(*(properties_of_children + count_listed_files), *(data_block.subfiles+j), 7);
+					*(*(properties_of_children + count_listed_files) + 7) = *(*(data_block.subfiles+j)+7);
 					count_listed_files++;
 				}
 			}
