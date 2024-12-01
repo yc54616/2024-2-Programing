@@ -19,9 +19,10 @@ void deleteInDirectory(int inode){
 		indirect_point_cnt = *(cntDataBlock.contents);
 	}
 
-	for (int i = 0; i < inodeList.reference_count - indirect_point_cnt; i++)
+	for (int i = 0; i < inodeList.reference_count - 1; i++)
 	{
 		initDataBlock(*(inodeList.direct_address+i));
+		setSuperBlock(SIZE_INODELIST + *(inodeList.direct_address+i) + 1, 0);
 	}
 
 	bool indirectAddressUse = (inodeList.reference_count > SIZE_DIRECT_POINTER) ? true : false;
@@ -32,9 +33,11 @@ void deleteInDirectory(int inode){
 			for (int i = 1; i <= indirect_point_cnt; i++)
 			{
 				initDataBlock(*(cntDataBlock.contents+i));
+				setSuperBlock(SIZE_INODELIST + *(cntDataBlock.contents+i) + 1, 0);
 			}
 		}
 		initDataBlock(inodeList.single_indirect_address);
+		setSuperBlock(SIZE_INODELIST + inodeList.single_indirect_address + 1, 0);
 	}
 }
 

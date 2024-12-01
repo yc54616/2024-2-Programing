@@ -457,7 +457,7 @@ void myls(char **commands)
 		{
 			InodeList inode = getInodeList(*(*(properties_of_children+i)+7));
 			struct tm *pt = localtime(&inode.access_date);
-			printf("%d/%d/%d %d:%d:%d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
+			printf("%02d/%02d/%02d %02d:%02d:%02d  ", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
 			printf("%s\t", inode.file_mode == 1 ? "directory" : "file");
 			printf("%d\t", *(*(properties_of_children+i)+7));
 			printf("%d byte  ", inode.size);

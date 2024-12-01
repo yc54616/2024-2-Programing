@@ -9,7 +9,7 @@
 
 time_t getCurTime();
 int getNeededDirectAdressNumber(char*);
-int allocateInodeForNewFiles(char* , int , int );
+int allocateInodeForNewFiles(char* , int , int, int);
 int allocateSingleIndirectBlock();
 void writeFileContents(char* , int , int );
 char getAllDirectAdressWithSourceFileName(char* , int );
