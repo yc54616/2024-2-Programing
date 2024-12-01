@@ -510,102 +510,134 @@ void myshowfile(char **commands)
 
 void mycp(char **commands)
 {
-    // char *source_file;
-    // char *dest_file;
-    // int inode_list_address_of_dest_file;
+    if (commands[1] == NULL || commands[2] == NULL)
+    {
+        printf("인자가 불충분합니다.\n"); // 임시
+        return;
+    }
 
-    // if (commands[1] == NULL)
-    // {
-    //     printf("인자가 불충분합니다.");
-    //     return;
-    // }
-    // else if (strlen(commands[1]) > 7)
-    // {
-    //     printf("그런 파일이 없습니다.");
-    //     return;
-    // }
-    // if (commands[2] == NULL)
-    // {
-    //     printf("인자가 불충분합니다.");
-    //     return;
-    // }
-    // else if (strlen(commands[2]) > 7)
-    // {
-    //     printf("파일 이름이 너무 깁니다.");
-    //     return;
-    // }
+    printf("argument : %s, argument2 : %s\n", commands[1], commands[2]);
 
-    // source_file = malloc(sizeof(char) * strlen(commands[1]) + 1);
-    // dest_file = malloc(sizeof(char) * strlen(commands[2]) + 1);
-    // strcpy(source_file, commands[1]);
-    // strcpy(dest_file, commands[2]);
-    // // if (getFileContentsWithSourceFileName(source_file, true) == "그런 파일이 없습니다.\n")
-    // // {
-    // //     printf("그런 파일이 없습니다.\n");
-    // //     return;
-    // // }
+	unsigned char *host_source_file = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[1]));
+	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[2]));
+	strcpy(host_source_file, commands[1]);
+	strcpy(new_name, commands[2]);
 
-    // SuperBlock super_block = getSuperBlock();
-    // InodeList inode_list;
-    // DataBlock data_block;
-    // char *source_file_content = (char *)calloc(256 * 8 + 1, sizeof(char) + 2);
-    // char *sliced_source_file_content = (char *)calloc(256 * 8 + 1, sizeof(char) + 2);
-    // char *source_indirect_content = NULL;
-    // char *sliced_source_indirect_content = NULL;
-    // bool is_indirect_block_used = false;
+	int inode_number = findNameToInode(host_source_file);
 
-    // if (getUsingIndirectBlock(source_file))
-    // {
-    //     is_indirect_block_used = true;
-    //     int using_indirect_block_number = getUsingIndirectBlock(source_file);
-    //     sliced_source_file_content = (char *)realloc(sliced_source_file_content, (256 * 8 + 256 * using_indirect_block_number + 1) * sizeof(char) + 1);
-    // }
+    if(inode_number == 0){
+        printf("mycp: 파일이 존재하지 않습니다\n");
+        free(host_source_file);
+        free(new_name);
+        return;
+    }
 
-    // strcpy(source_file_content, getFileContentsWithSourceFileName(source_file, true));
-    // strncpy(sliced_source_file_content, source_file_content, strlen(source_file_content) - (7 - (strlen(source_file_content) / 256)));
+	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(new_name));
+	unsigned char *dest_file = (unsigned char *)calloc(sizeof(unsigned char), 8);
+	
+	int inode_number_base = findNameToBaseInode(new_name, path, dest_file);
+    int new_inode_number = findNameToInode(new_name);	
+	
+	if (new_inode_number != 0){//위치를 옮기는 경우
+		InodeList inode_list = getInodeList(new_inode_number);
+		
+		if (inode_list.file_mode == DIRECTORY){
+            inode_number_base = new_inode_number;
+            
+            if(strlen(host_source_file) > 7){
+                printf("File Name too long..\n");
+                free(host_source_file);
+                free(new_name);
+                free(path);
+                free(dest_file);
+                return;
+            }
+            else{
+                strcpy(dest_file, host_source_file);
+            }
+		}
+		else{
+            printf("mycp: 파일을 복사할 수 없습니다.\n");
+            free(host_source_file);
+            free(new_name);
+            free(path);
+            free(dest_file);
+            return;
+        }
+	}
 
-    // if (is_indirect_block_used)
-    // {
-    //     source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file) + 1, sizeof(char) + 2);
-    //     sliced_source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file) + 1, sizeof(char) + 2);
-    //     strcpy(source_indirect_content, getIndirectBlockContentsWithSourceFileName(source_file));
-    //     strncpy(sliced_source_indirect_content, source_indirect_content, strlen(source_indirect_content) - getUsingIndirectBlock(source_file));
-    //     strcat(sliced_source_file_content, sliced_source_indirect_content);
-    //     if (source_indirect_content != NULL)
-    //     {
-    //         free(source_indirect_content);
-    //         source_indirect_content = NULL;
-    //     }
-    //     if (sliced_source_indirect_content != NULL)
-    //     {
-    //         free(sliced_source_indirect_content);
-    //         sliced_source_indirect_content = NULL;
-    //     }
-    // }
-    // getNeededDirectAdressNumber(sliced_source_file_content);
-    // inode_list_address_of_dest_file = allocateInodeForNewFiles(dest_file, getNeededDirectAdressNumber(sliced_source_file_content), strlen(sliced_source_file_content));
-    // writeFileContents(sliced_source_file_content, inode_list_address_of_dest_file, getNeededDirectAdressNumber(sliced_source_file_content));
+    printf("inode_number : %d, inode_number_base : %d, host_source_file : %s, new_name : %s, path : %s, dest_file : %s\n", inode_number, inode_number_base, host_source_file, new_name, path, dest_file);
 
-    // if (source_file != NULL)
-    // {
-    //     free(source_file);
-    //     source_file = NULL;
-    // }
-    // if (dest_file != NULL)
-    // {
-    //     free(dest_file);
-    //     dest_file = NULL;
-    // }
-    // if (source_file_content != NULL)
-    // {
-    //     free(source_file_content);
-    //     source_file_content = NULL;
-    // }
-    // if (sliced_source_file_content != NULL)
-    // {
-    //     free(sliced_source_file_content);
-    //     sliced_source_file_content = NULL;
-    // }
+    InodeList inodeList = getInodeList(inode_number);
+    printf("inodeList.size : %d\n", inodeList.size);
+
+    if(inodeList.size != 0){
+        int inode = findEmptyInode();
+        unsigned char directList[8] = {0,};
+        unsigned char singleList = 0;
+        if(inodeList.reference_count > SIZE_DIRECT_POINTER){
+            for(int i = 0; i < inodeList.reference_count - 1; i++){
+                int inodeDatablock = findEmptyDataBlock();
+                directList[i] = inodeDatablock;
+                DataBlock datablock = getDataBlock(inodeList.direct_address[i]);
+                setDataBlock(inodeDatablock, datablock.contents);
+                setSuperBlock(SIZE_INODELIST + inodeDatablock + 1, 1);
+            }
+
+            DataBlock cntDataBlock;
+            int indirect_point_cnt = 0;
+            if(inodeList.single_indirect_address != 0){
+                cntDataBlock = getDataBlock(inodeList.single_indirect_address);
+                indirect_point_cnt = *(cntDataBlock.contents); // == cntDataBlock.contents[0]
+            }
+
+            singleList = findEmptyDataBlock();
+            DataBlock tmpSingleDataBlock = getDataBlock(singleList);
+            setSuperBlock(SIZE_INODELIST + singleList + 1, 1);
+            tmpSingleDataBlock.contents[0] = indirect_point_cnt;
+            for(int i = 1; i <= indirect_point_cnt; i++){
+                int inodeDatablock = findEmptyDataBlock();
+                tmpSingleDataBlock.contents[i] = inodeDatablock;
+                DataBlock datablock = getDataBlock(cntDataBlock.contents[i]);
+                setDataBlock(inodeDatablock, datablock.contents);
+                setSuperBlock(SIZE_INODELIST + inodeDatablock + 1, 1);
+            }
+            setDataBlock(singleList, tmpSingleDataBlock.contents);
+        }
+        else{
+            for(int i = 0; i < inodeList.reference_count; i++){
+                int inodeDatablock = findEmptyDataBlock();
+                directList[i] = inodeDatablock;
+                DataBlock datablock = getDataBlock(inodeList.direct_address[i]);
+                setDataBlock(inodeDatablock, datablock.contents);
+                setSuperBlock(SIZE_INODELIST + inodeDatablock + 1, 1);
+            }
+        }
+
+        setSuperBlock(inode, 1);
+        dest_file[7] = inode;
+        writeDirectory(dest_file, inode_number_base, DIRECTORY);
+
+        setInodeList(inode, GENERAL, inodeList.access_date, inodeList.birth_date, inodeList.size, inodeList.reference_count, directList, singleList);
+        
+    }
+    else{
+        int dataBlock = findEmptyDataBlock();
+        int inode = findEmptyInode();
+
+        dest_file[7] = inode;
+
+        setSuperBlock(inode, 1);
+        setSuperBlock(SIZE_INODELIST + dataBlock + 1, 1);
+        writeDirectory(dest_file, inode_number_base, DIRECTORY);
+        unsigned char direct_address[8] = {dataBlock,};
+        setInodeList(inode, GENERAL, inodeList.access_date, inodeList.birth_date, inodeList.size, inodeList.reference_count, direct_address, inodeList.single_indirect_address);
+    }
+
+    free(host_source_file);
+    free(new_name);
+    free(path);
+    free(dest_file);
 }
 
 void mycpto(char **commands)
