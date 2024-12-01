@@ -12,6 +12,7 @@ int getNeededDirectAdressNumber(char*);
 int allocateInodeForNewFiles(char* , int , int, int);
 int allocateSingleIndirectBlock();
 void writeFileContents(char* , int , int );
+void getFileContents(int, unsigned char * );
 char getAllDirectAdressWithSourceFileName(char* , int );
 char* getFileContentsWithSourceFileName(char* , bool);
 void mycat(char**);

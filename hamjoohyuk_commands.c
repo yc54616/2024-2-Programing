@@ -83,7 +83,20 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
     int copy_count = 0;
     for (copy_count; copy_count < direct_adress_number && copy_count * 256 < strlen(entire_contents) && copy_count < 8; copy_count++)
     { // 256바이트씩 나눠서 배열에 복사
-        strncpy(divided_contents[copy_count], entire_contents + copy_count * 256, 256);
+        int i = 0;
+        for (i = 0; i < 256; i++)
+        {
+            if (*(entire_contents + copy_count * 256 + i) == '\0')
+                break;
+        }
+
+        for (int j = 0; j < i; j++)
+        {
+            divided_contents[copy_count][j] = entire_contents[copy_count * 256 + j];
+        }
+        for(int j = i; j < 256; j++){
+            divided_contents[copy_count][j] = 0;
+        }
     }
 
     for (int i = 0; i < direct_adress_number && i < 8; i++)
@@ -95,7 +108,7 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
 
     if (direct_adress_number > 8)
     {
-        unsigned char divided_contents[256] = {0};
+        unsigned char d[256] = {0};
         unsigned char contents_of_single_indirect_block[256] = {0};
         int single_indirect_address = inode_list.single_indirect_address;
         int needed_extra_datablock_count = 0;
@@ -103,28 +116,29 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
         length -= 2048;
         while (length > 0)
         {
+            memset(d, 0, sizeof(d));
             needed_extra_datablock_count++;
             unsigned char new_data_block_adress_for_single_indirect_block = findEmptyDataBlock();
             setSuperBlock(SIZE_INODELIST + new_data_block_adress_for_single_indirect_block + 1, 1);
             contents_of_single_indirect_block[0] = needed_extra_datablock_count;
             contents_of_single_indirect_block[needed_extra_datablock_count] = new_data_block_adress_for_single_indirect_block;
             setDataBlock(single_indirect_address, contents_of_single_indirect_block);
-            data_block = getDataBlock(single_indirect_address);
             int i = 0;
             for (i = 0; i < 256; i++)
             {
-                if (*(entire_contents + copy_count * 256) == 0)
+                if (*(entire_contents + copy_count * 256 + i) == '\0')
                     break;
             }
 
-            *(divided_contents) = 0;
-
             for (int j = 0; j < i; j++)
             {
-                divided_contents[j] = entire_contents[copy_count * 256 + j];
+                d[j] = entire_contents[copy_count * 256 + j];
+            }
+            for(int j = i; j < 256; j++){
+                d[j] = 0;
             }
 
-            setDataBlock(new_data_block_adress_for_single_indirect_block, divided_contents);
+            setDataBlock(new_data_block_adress_for_single_indirect_block, d);
             copy_count++;
             length -= 256;
         }
@@ -380,8 +394,8 @@ void mycat(char **commands)
         return;
     }
 
-	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[1]));
-	strcpy(arg, commands[1]);
+	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(*(commands + 1)));
+	strcpy(arg, *(commands + 1));
 
 	int inode_number = findNameToInode(arg);
 
@@ -393,11 +407,17 @@ void mycat(char **commands)
 
     InodeList inodeList = getInodeList(inode_number);
 
+    if(inodeList.file_mode == DIRECTORY){
+        printf("mycat: 파일이 아닙니다\n");
+        free(arg);
+        return;
+    }
+
     for (int i = 0; i < inodeList.reference_count; i++)
 	{
         DataBlock datablock = getDataBlock(*(inodeList.direct_address+i));
         for(int j = 0; j < 256; j++){
-            if(*(datablock.contents+j) == '\0')
+            if(*(datablock.contents+j) == '\0' || *(datablock.contents+j) == '\t')
                 break;
             printf("%c", *(datablock.contents+j));
         }
@@ -410,7 +430,7 @@ void mycat(char **commands)
         {
             DataBlock datablock = getDataBlock(*(singleInodeList.contents+i));
 		    for(int j = 0; j < 256; j++){
-                if(*(datablock.contents+j) == '\0')
+                if(*(datablock.contents+j) == '\0' || *(datablock.contents+j) == '\t')
                     break;
 		        printf("%c", *(datablock.contents+j));
             }
@@ -420,134 +440,72 @@ void mycat(char **commands)
 
 void myshowfile(char **commands)
 {
-    int block_address;
-    DataBlock data_block;
-    int i = 0;
-    int num1 = 0;
-    int num2 = 0;
-    char file_name[7] = {0};
-
-    if (commands[1] == NULL)
+    if (*(commands + 1) == NULL || *(commands + 2) == NULL || *(commands + 3) == NULL)
     {
         errmsg("인자가 불충분합니다.\n");
         return;
     }
 
-    for (i = 0; commands[1][i] != '\0'; i++)
-    {
-        if (commands[1][i] < '0' || commands[1][i] > '9')
+    int n1 = atoi(*(commands + 1));
+    int n2 = atoi(*(commands + 2));
+
+	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(*(commands + 3)));
+	strcpy(arg, *(commands + 3));
+
+	int inode_number = findNameToInode(arg);
+    printf("arg : %s\n", arg);
+
+    if(inode_number == 0){
+        printf("myshowfile: 그런 파일이나 디렉터리가 없습니다\n");
+        free(arg);
+        return;
+    }
+
+    InodeList inodeList = getInodeList(inode_number);
+
+    if(inodeList.file_mode == DIRECTORY){
+        printf("mycat: 파일이 아닙니다\n");
+        free(arg);
+        return;
+    }
+
+    int flag = false;
+    int cnt = 1;
+    for (int i = 0; i < inodeList.reference_count; i++)
+	{
+        DataBlock datablock = getDataBlock(*(inodeList.direct_address+i));
+        for(int j = 0; j < 256; j++){
+            if(*(datablock.contents+j) == '\0')
+                break;
+            if(cnt == n1)
+                flag = true;
+            else if(cnt == n2+1)
+                flag = false;
+            if(flag)
+                printf("%c", *(datablock.contents+j));
+            cnt++;
+        }
+	}
+
+    if(inodeList.single_indirect_address != 0){
+        DataBlock singleInodeList = getDataBlock(inodeList.single_indirect_address);
+        int indirect_point_cnt = *(singleInodeList.contents);
+        for (int i = 1; i <= indirect_point_cnt; i++)
         {
-            errmsg("범위는 양수여야 합니다.\n");
-            return;
+            DataBlock datablock = getDataBlock(*(singleInodeList.contents+i));
+		    for(int j = 0; j < 256; j++){
+                if(*(datablock.contents+j) == '\0')
+                    break;
+		        if(cnt == n1)
+                    flag = true;
+                else if(cnt == n2+1)
+                    flag = false;
+                if(flag)
+                    printf("%c", *(datablock.contents+j));
+                cnt++;
+            }
         }
     }
-
-    if (i == 0)
-    {
-        errmsg("인자가 불충분합니다.\n");
-        return;
-    }
-
-    if (commands[2] == NULL)
-    {
-        errmsg("인자가 불충분합니다.\n");
-        return;
-    }
-
-    for (i = 0; commands[2][i] != '\0'; i++)
-    {
-        if (commands[2][i] < '0' || commands[2][i] > '9')
-        {
-            errmsg("범위는 양수여야 합니다.\n");
-            return;
-        }
-    }
-
-    if (i == 0)
-    {
-        errmsg("인자가 불충분합니다.\n");
-        return;
-    }
-
-    if (commands[3] == NULL)
-    {
-        errmsg("인자가 불충분합니다.\n");
-        return;
-    }
-
-    else if (strlen(commands[3]) > 7)
-    {
-        errmsg("그런 파일이 없습니다.\n");
-        return;
-    }
-
-    num1 = strtol(commands[1], NULL, 10);
-    num2 = strtol(commands[2], NULL, 10);
-    strcpy(file_name, commands[3]);
-    char *file_content = (char *)calloc(256 * 8 + 1, sizeof(char) + 2);
-    strcpy(file_content, getFileContentsWithSourceFileName(file_name, true));
-    int printlen = strlen(file_content) - (7 - strlen(file_content) / 256);
-    int contentlen = strlen(file_content);
-    for (int i = 0; i < 7 - contentlen / 256; i++)
-    {
-        file_content[contentlen - 1 - i] = 0;
-    }
-
-    if (getUsingIndirectBlock(file_name))
-    {
-        file_content = (char *)realloc(file_content, (256 * 8 + getUsingIndirectBlock(file_name) * 256 + 1) * sizeof(char) + 2);
-        if (file_content == NULL)
-        {
-            printf("파일 포인터 에러!");
-            return;
-        }
-        int using_indirect_block_number = getUsingIndirectBlock(file_name);
-        char *indirect_content = (char *)calloc(256 * using_indirect_block_number + 1, sizeof(char) + 2);
-        strcpy(indirect_content, getIndirectBlockContentsWithSourceFileName(file_name));
-        int indirect_printlen = strlen(indirect_content) - using_indirect_block_number;
-        int indirect_strlen = strlen(indirect_content);
-        for (int i = 0; i < using_indirect_block_number; i++)
-            indirect_content[indirect_strlen - 1 - i] = 0;
-        strcat(file_content, indirect_content);
-        if (indirect_content != NULL)
-            free(indirect_content);
-    }
-
-    if (!strcmp(file_content, "그런 파일이 없습니다.\n"))
-    {
-        printf("그런 파일이 없습니다.\n");
-        if (file_content != NULL)
-            free(file_content);
-        return;
-    }
-
-    if (num1 < 0 || num2 >= strlen(file_content) || num1 > num2)
-    {
-        printf("범위가 올바르지 않습니다.\n"); // 임시
-        if (file_content != NULL)
-            free(file_content);
-        return;
-    }
-
-    for (i = num1 - 1; i <= num2 - 1; i++)
-    {
-        if (file_content[i] == '\0')
-        {
-            printf("범위가 올바르지 않습니다.\n");
-            if (file_content != NULL)
-                free(file_content);
-            return;
-        }
-    }
-
-    for (i = num1 - 1; i <= num2 - 1; i++)
-    {
-        printf("%c", file_content[i]);
-    }
-
-    printf("\n");
-    if (file_content != NULL)
-        free(file_content);
 }
 
 void mycp(char **commands)
