@@ -74,8 +74,6 @@ void writeFileContents(char* entire_contents, int inode_list_adress, int direct_
     for (copy_count; copy_count < direct_adress_number && copy_count * 256 < strlen(entire_contents) && copy_count < 8; copy_count++) {  // 256바이트씩 나눠서 배열에 복사
         strncpy(divided_contents[copy_count], entire_contents + copy_count * 256, 256);
     }
-    printf("%s", divided_contents);
-    printf("\n\n");
 
     for(int i = 0; i < direct_adress_number && i < 8; i++) {
         data_block_adress[i] = inode_list.direct_address[i];
@@ -86,8 +84,6 @@ void writeFileContents(char* entire_contents, int inode_list_adress, int direct_
                 continue;
         //}
     }
-        printf("%s", divided_contents);
-        printf("\n\n");
 
     if(direct_adress_number > 8) {
         unsigned char divided_contents[256] = {0};
@@ -465,24 +461,163 @@ void myshowfile(char** commands) {
     if(file_content != NULL) free(file_content);
 }
 
-void myrm(char** commands) {
+void mycp(char** commands) {
+    char* source_file;
+    char* dest_file;
+    int inode_list_address_of_dest_file;
+
     if(commands[1] == NULL) {
-        printf("인자가 불충분합니다.");
+        printf("인자가 불충분합니다."); 
         return ;
     }
     else if(strlen(commands[1]) > 7) {
-        printf("파일 이름이 너무 깁니다."); //임시
+        printf("그런 파일이 없습니다."); 
         return ;
-
     }
-    char* file_name = commands[1];
-    int now_working_directory_inode_number = getNowWorkingDirectoryInodeNumber();
+    if(commands[2] == NULL) {
+        printf("인자가 불충분합니다."); 
+        return ;
+    }
+    else if(strlen(commands[2]) > 7) {
+        printf("파일 이름이 너무 깁니다.");
+        return ;
+    }
+
+    source_file = malloc(sizeof(char) * strlen(commands[1]) + 1);
+    dest_file = malloc(sizeof(char) * strlen(commands[2]) + 1);
+    strcpy(source_file, commands[1]);
+    strcpy(dest_file, commands[2]);
+    if(getFileContentsWithSourceFileName(source_file, true) == "그런 파일이 없습니다.\n") {
+        printf("그런 파일이 없습니다.\n");
+        return ;
+    }
+
     SuperBlock super_block = getSuperBlock();
 	InodeList inode_list;
     DataBlock data_block;
-    inode_list = getInodeList(now_working_directory_inode_number);
-    data_block = getDataBlock(inode_list.direct_address[0]);
-}   
+    char* source_file_content = (char *)calloc(256 * 8 + 1, sizeof(char) + 2);
+    char* sliced_source_file_content = (char *)calloc(256 * 8 + 1, sizeof(char) + 2);
+    char* source_indirect_content = NULL;
+    char* sliced_source_indirect_content = NULL;
+    bool is_indirect_block_used = false;
+
+    if(getUsingIndirectBlock(source_file)) {
+        is_indirect_block_used = true;
+        int using_indirect_block_number = getUsingIndirectBlock(source_file);
+        sliced_source_file_content = (char *)realloc(sliced_source_file_content, (256 * 8 + 256 * using_indirect_block_number + 1) * sizeof(char) + 1);
+    }
+
+    strcpy(source_file_content, getFileContentsWithSourceFileName(source_file, true));
+    strncpy(sliced_source_file_content, source_file_content, strlen(source_file_content) - (7 - (strlen(source_file_content) / 256)));
+
+    if(is_indirect_block_used) {
+        source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file) + 1, sizeof(char) + 2);
+        sliced_source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file) + 1, sizeof(char) + 2);
+        strcpy(source_indirect_content, getIndirectBlockContentsWithSourceFileName(source_file));
+        strncpy(sliced_source_indirect_content, source_indirect_content, strlen(source_indirect_content) - getUsingIndirectBlock(source_file));
+        strcat(sliced_source_file_content, sliced_source_indirect_content);
+        if (source_indirect_content != NULL) {
+            free(source_indirect_content);
+            source_indirect_content = NULL;
+        }
+        if (sliced_source_indirect_content != NULL) {
+            free(sliced_source_indirect_content);
+            sliced_source_indirect_content = NULL;
+        }
+    }
+    getNeededDirectAdressNumber(sliced_source_file_content);
+    inode_list_address_of_dest_file = allocateInodeForNewFiles(dest_file, getNeededDirectAdressNumber(sliced_source_file_content), strlen(sliced_source_file_content));
+    writeFileContents(sliced_source_file_content, inode_list_address_of_dest_file, getNeededDirectAdressNumber(sliced_source_file_content));
+
+    if (source_file != NULL) {
+        free(source_file);
+        source_file = NULL;
+    }
+    if (dest_file != NULL) {
+        free(dest_file);
+        dest_file = NULL;
+    }
+    if (source_file_content != NULL) {
+        free(source_file_content);
+        source_file_content = NULL;
+    }
+    if (sliced_source_file_content != NULL) {
+        free(sliced_source_file_content);
+        sliced_source_file_content = NULL;
+    }
+    }
+
+void mycpto(char** commands) {
+    char* source_file;
+    char* host_dest_file;
+
+    if(*(commands + 1) == NULL) {
+        printf("인자가 불충분합니다."); 
+        return ;
+    }
+    else if(strlen(*(commands + 1)) > 7) {
+        printf("그런 파일이 없습니다."); 
+        return ;
+    }
+    if(*(commands + 2) == NULL) {
+        printf("인자가 불충분합니다."); 
+        return ;
+    }
+
+
+    source_file = malloc(sizeof(char) * strlen(commands[1]) + 1);
+    host_dest_file = malloc(sizeof(char) * strlen(commands[2]) + 1);
+
+    strcpy(source_file, *(commands + 1));
+    strcpy(host_dest_file, *(commands + 2));
+    
+    char* source_file_content = (char *)calloc(256 * 8 + 1, sizeof(char) + 2);
+    char* sliced_source_file_content = (char*)calloc(256 * 8, sizeof(char) + 2);
+    char* source_indirect_content = NULL;
+    char* sliced_source_indirect_content = NULL;
+    bool is_indirect_block_used = false;
+
+    if(getUsingIndirectBlock(source_file)) {
+        is_indirect_block_used = true;
+        int using_indirect_block_number = getUsingIndirectBlock(source_file);
+        sliced_source_file_content = (char*)realloc(sliced_source_file_content, (256 * 8 + 256 * using_indirect_block_number + 1) * sizeof(char) + 2);
+    }
+
+    strcpy(source_file_content, getFileContentsWithSourceFileName(source_file, true));
+    strncpy(sliced_source_file_content, source_file_content, strlen(source_file_content) - (7 - (strlen(source_file_content) / 256)));
+
+    if(is_indirect_block_used) {
+        source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file) + 1, sizeof(char) + 2);
+        sliced_source_indirect_content = (char *)calloc(256 * getUsingIndirectBlock(source_file) + 1, sizeof(char) + 2);
+        strcpy(source_indirect_content, getIndirectBlockContentsWithSourceFileName(source_file));
+        strncpy(sliced_source_indirect_content, source_indirect_content, strlen(source_indirect_content) - getUsingIndirectBlock(source_file));
+        // strcpy(sliced_source_indirect_content, source_indirect_content);
+        strcat(sliced_source_file_content, sliced_source_indirect_content);
+        if (source_indirect_content != NULL) {
+            free(source_indirect_content);
+            source_indirect_content = NULL;
+        }
+        if (sliced_source_indirect_content != NULL) {
+            free(sliced_source_indirect_content);
+            sliced_source_indirect_content = NULL;
+        }
+    }
+    
+    FILE *host_txt;
+    host_txt = fopen(host_dest_file, "w+");
+    if(host_txt == NULL) {
+        printf("호스트 파일을 만들거나 열 수 없습니다.\n");
+        return ;
+    }
+    for(int i = 0; i < strlen(sliced_source_file_content); i++) {
+        fputc(*(sliced_source_file_content + i), host_txt);
+    }
+    fclose(host_txt);
+    if(source_file != NULL) free(source_file);
+    if(host_dest_file != NULL) free(host_dest_file);
+    if(source_file_content != NULL) free(source_file_content);
+    if(sliced_source_file_content != NULL) free(sliced_source_file_content);
+} 
 
 void mycpfrom(char** commands) {
     char* host_source_file;
