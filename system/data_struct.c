@@ -62,16 +62,8 @@ void deleteDirectory(char *name, int inode)
 	if (indirectAddressUse)
 	{
 		DataBlock dataTmp = getDataBlock(cntDataBlock.contents[indirect_point_cnt]);
-
-		printf("cntDataBlock.contents[indirect_point_cnt] : %d\n", cntDataBlock.contents[indirect_point_cnt]);
-
 		for(int k = 0; k < 8; k++)
 			endStr[k] = dataTmp.contents[(inodeList.size-8)%256+k];
-
-		printf("endStr : ");
-		for(int k = 0; k < 7; k++)
-			printf("%c", endStr[k]);
-		printf(" %d", endStr[7]);
 		
 		deleteDirectoryDataBlock(cntDataBlock.contents[indirect_point_cnt], (inodeList.size-8)%256); // data block 마지막 지우기 
 		inodeList.size -= 8;
@@ -109,8 +101,6 @@ void deleteDirectory(char *name, int inode)
 			for(int j = 0; j < SIZE_DATABLOCK/8; j++){
 				if(strncmp(name, data_block.subfiles[j], 7) == 0){
 					writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address+i), j*8);
-					printf("find!!\n");
-					printf("%s\n", name);
 					writeDirectoryDataBlock(endStr, *(inodeList.direct_address+i), j*8);
 				}
 			}
@@ -123,8 +113,6 @@ void deleteDirectory(char *name, int inode)
 				for(int j = 0; j < SIZE_DATABLOCK/8; j++){
 					if(strncmp(name, data_block.subfiles[j], 7) == 0){
 						writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address+i), j*8);
-						printf("find!!\n");
-						printf("%s\n", name);
 						writeDirectoryDataBlock(endStr, cntDataBlock.contents[indirect_point_cnt], j*8);
 					}
 				}
@@ -140,11 +128,6 @@ void deleteDirectory(char *name, int inode)
 
 		for(int k = 0; k < 8; k++)
 			endStr[k] = dataTmp.contents[(inodeList.size-8)%256+k];
-	
-		printf("endStr : ");
-		for(int k = 0; k < 7; k++)
-			printf("%c", endStr[k]);
-		printf(" %d", endStr[7]);
 		
 		deleteDirectoryDataBlock(inodeList.direct_address[inodeList.reference_count-1], (inodeList.size-8)%256); // data block 마지막 지우기 
 		inodeList.size -= 8;
@@ -167,8 +150,6 @@ void deleteDirectory(char *name, int inode)
 			for(int j = 0; j < SIZE_DATABLOCK/8; j++){
 				if(strncmp(name, data_block.subfiles[j], 7) == 0){
 					writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address+i), j*8);
-					printf("find!!\n");
-					printf("%s\n", name);
 					writeDirectoryDataBlock(endStr, *(inodeList.direct_address+i), j*8);
 				}
 			}
@@ -212,7 +193,6 @@ void writeDirectory(char *name, int inode, int type)
 
 		DataBlock db = getDataBlock(useDataBlockInode);
 		indirectAddress = db.contents[db.contents[0]]; // indirect_address은 데이터블럭의 [0]이 크기를 저장함
-		printf("indirectAddress : %d\n", indirectAddress);
 		writeDirectoryDataBlock(name, indirectAddress, (inode_list.size)%256);
 		setInodeList(inode, type, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
 		

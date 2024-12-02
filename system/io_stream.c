@@ -3,8 +3,20 @@
 
 #include "io_stream.h"
 
+int howUseDataBlockInode(){
+	int notUse = 0;
+	SuperBlock superblock = getSuperBlock();
+	for(int i = 0; i < 256; i++){
+		if(superblock.data_block[i/8].first_bit == 0){
+			notUse++;
+		}
+		superblock.data_block[i/8].for_shift <<= 1;
+	}
+	return notUse;
+}
+
 // 0인 비어있는 inode superblock 찾기 
-unsigned char findEmptyInode(){
+int findEmptyInode(){
 	SuperBlock superblock = getSuperBlock();
 	for(int i = 0; i < 128; i++){
 		if(superblock.inode_list[i/8].first_bit == 0){
@@ -12,10 +24,11 @@ unsigned char findEmptyInode(){
 		}
 		superblock.inode_list[i/8].for_shift <<= 1;
 	}
+	return -1;
 }
 
 // 0인 비어있는 datablock superblock 찾기 
-unsigned char findEmptyDataBlock(){
+int findEmptyDataBlock(){
 	SuperBlock superblock = getSuperBlock();
 	for(int i = 0; i < 256; i++){
 		if(superblock.data_block[i/8].first_bit == 0){
@@ -23,6 +36,7 @@ unsigned char findEmptyDataBlock(){
 		}
 		superblock.data_block[i/8].for_shift <<= 1;
 	}
+	return -1;
 }
 
 // address : Indirect주소

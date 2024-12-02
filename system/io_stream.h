@@ -7,8 +7,9 @@
 #	include <stdbool.h>
 
 #	include "file_system.h"
-unsigned char findEmptyInode();
-unsigned char findEmptyDataBlock();
+int howUseDataBlockInode();
+int findEmptyInode();
+int findEmptyDataBlock();
 void writeIndirectDataBlock(int address, int datablockIndex);
 void deleteDirectoryDataBlock(int datablockIndex, int startIndex);
 void writeDirectoryDataBlock(char name[], int datablockIndex, int startIndex);

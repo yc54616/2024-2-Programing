@@ -35,12 +35,8 @@ void mymv(char **commands)
 	
 	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
 
-	if (inode_number != 0)
+	if (inode_number == 0)
 	{
-		printf("inode_number FIND!!\n");
-		printf("%d\n", inode_number);
-	}
-	else{
 		printf("mymv: No such File\n");
 		free(arg);
 		free(path);
@@ -50,7 +46,6 @@ void mymv(char **commands)
 	}
 	//원래 위치에 있는 파일/디렉토리 이름 지우기
 	
-	printf("new_name : %s\n", new_name);
 	int new_inode_number = findNameToInode(new_name);	
 	
 	if (new_inode_number != 0){//위치를 옮기는 경우
@@ -59,9 +54,7 @@ void mymv(char **commands)
 		for(int i = 0;i < 7; i++)
 			writeName[i] = finalStr[i];
 		writeName[7] = inode_number;
-		printf("new_inode_number FIND!! %d\n", inode_number);
 		
-		printf("%d\n", new_inode_number);
 		if (inode_list.file_mode == DIRECTORY){
 			deleteDirectory(finalStr, inode_number_base);
 			writeDirectory(writeName, new_inode_number, DIRECTORY);
@@ -76,9 +69,6 @@ void mymv(char **commands)
 		for(int i = 0;i < 7; i++)
 			writeName[i] = new_name[i];
 		writeName[7] = inode_number;
-		for(int i = 0;i < 8; i++)
-			printf("%c", writeName[i]);
-		printf("\n");
 		if (inode_list.file_mode == DIRECTORY)
 			writeDirectory(writeName, inode_number_base, DIRECTORY);
 		else
@@ -107,12 +97,8 @@ void myrm(char **commands)
 	
 	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
 
-	if (inode_number != 0)
+	if (inode_number == 0)
 	{
-		printf("FIND!!\n");
-		printf("%d\n", inode_number);
-	}
-	else{
 		printf("myrm: Cannot remove: No such file or directory.\n");
 		free(arg);
 		free(path);
@@ -134,9 +120,6 @@ void myrm(char **commands)
 		deleteDirectory(finalStr, inode_number_base);
 		deleteInDirectory(inode_number);
 		initInodeList(inode_number);
-
-		printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
-
 	}
 
 	free(arg);
@@ -194,12 +177,6 @@ void mytouch(char **commands)
 	
 	findNameToBaseInode(arg, path, finalStr);
 
-	if (inode_number != 0)
-	{
-		printf("FIND!!\n");
-		printf("%d\n", inode_number);
-	};
-
 	time_t curTime;
 	InodeList inode_list;
 
@@ -219,7 +196,22 @@ void mytouch(char **commands)
 		cd(&virtual_working_directory, &virtual_depth_working_directory, path);
 
 		inode_number = findEmptyInode();
+
+		if(inode_number == -1){
+			printf("사용할 수 있는 inode가 없습니다\n");
+			free(arg);
+			free(path);
+			free(finalStr);
+			return;
+		}
 		int dataBlock_num = findEmptyDataBlock();
+		if(dataBlock_num == -1){
+			printf("사용할 수 있는 datablock이 없습니다\n");
+			free(arg);
+			free(path);
+			free(finalStr);
+			return;
+		}
 		unsigned char address[8] = {
 			dataBlock_num,
 		};
@@ -256,8 +248,6 @@ void mymkdir(char **commands)
 	
 	int inode_number = findNameToBaseInode(arg, path, finalStr);
 
-	printf("path : %s, finalStr : %s\n", path, finalStr);
-
 	if(inode_number == 0){
 		printf("mymkdir: 디렉터리를 만들 수 없습니다: 그런 파일이나 디렉터리가 없습니다\n");
 		free(arg);
@@ -272,14 +262,10 @@ void mymkdir(char **commands)
 
 	cd(&virtual_working_directory, &virtual_depth_working_directory, path);
 
-	printf("virtual_working_directory inode %d\n", virtual_working_directory->my_inode_number);
-
 	InodeList findInode = getInodeList(inode_number);
 
 	int useInode = findEmptyInode();
 	int useDataBlock = findEmptyDataBlock();
-
-	printf(">> useInode : %d, useDataBlock %d\n", useInode, useDataBlock);
 
 	finalStr[7] = useInode;
 
@@ -320,12 +306,8 @@ void myrmdir(char **commands)
 	
 	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
 
-	if (inode_number != 0)
+	if (inode_number == 0)
 	{
-		printf("FIND!!\n");
-		printf("%d\n", inode_number);
-	}
-	else{
 		printf("myrmdir: Cannot remove: No such file or directory.\n");
 		free(arg);
 		free(path);
@@ -358,9 +340,6 @@ void myrmdir(char **commands)
 		deleteDirectory(finalStr, inode_number_base);
 		deleteInDirectory(inode_number);
 		initInodeList(inode_number);
-
-		printf("\ninode_number_base : %d, path : %s, finalStr : %s\n", inode_number_base, path, finalStr);
-
 	}
 	free(arg);
 	free(path);
@@ -423,8 +402,6 @@ void myls(char **commands)
 		int count_files = workingInodeList.size / 8;
 		properties_of_children = (unsigned char(*)[8])calloc(sizeof(unsigned char(*)[8]), count_files); // We will make this sorted.
 		int count_listed_files = 0;
-
-		printf("count_files : %d\n", count_files);
 
 		for (int i = 0; i < workingInodeList.reference_count - indirect_point_cnt; i++)
 		{

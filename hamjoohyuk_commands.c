@@ -8,6 +8,8 @@
 #include "system/data_struct.h"
 #include "hamjoohyuk_commands.h"
 
+
+
 time_t getCurTime()
 {
     time_t cur_time;
@@ -53,7 +55,7 @@ int allocateInodeForNewFiles(char *new_file_name, int direct_adress_number, int 
     }
     else
     {
-        unsigned new_single_indirect_block = allocateSingleIndirectBlock();
+        unsigned char new_single_indirect_block = allocateSingleIndirectBlock();
         setInodeList(new_inode_list_index, GENERAL, cur_time, cur_time, content_size, direct_adress_number, new_data_block_index, new_single_indirect_block);
     }
 
@@ -77,7 +79,7 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
     SuperBlock super_block = getSuperBlock();
     InodeList inode_list = getInodeList(inode_list_adress);
     DataBlock data_block;
-    char data_block_adress[8] = {0};
+    unsigned char data_block_adress[8] = {0};
     unsigned char divided_contents[8][256] = {0}; // 8개의 256바이트 배열 선언(Direct Block)
 
     int copy_count = 0;
@@ -108,20 +110,19 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
 
     if (direct_adress_number > 8)
     {
-        unsigned char d[256] = {0};
-        unsigned char contents_of_single_indirect_block[256] = {0};
-        int single_indirect_address = inode_list.single_indirect_address;
-        int needed_extra_datablock_count = 0;
         int length = inode_list.size;
+        unsigned char divided_contents[256] = {0,};
+        int single = inode_list.single_indirect_address;
+        int indirectAddress;
         length -= 2048;
         while (length > 0)
         {
-            memset(d, 0, sizeof(d));
-            needed_extra_datablock_count++;
-            unsigned char new_data_block_adress_for_single_indirect_block = findEmptyDataBlock();
+            memset(divided_contents, 0, sizeof(divided_contents));
+            int new_data_block_adress_for_single_indirect_block = findEmptyDataBlock();
             setSuperBlock(SIZE_INODELIST + new_data_block_adress_for_single_indirect_block + 1, 1);
-            contents_of_single_indirect_block[0] = needed_extra_datablock_count;
-            contents_of_single_indirect_block[needed_extra_datablock_count] = new_data_block_adress_for_single_indirect_block;
+            writeIndirectDataBlock(new_data_block_adress_for_single_indirect_block, single);
+            DataBlock db = getDataBlock(single);
+		    indirectAddress = db.contents[db.contents[0]];
             
             int i = 0;
             for (i = 0; i < 256; i++)
@@ -132,19 +133,17 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
 
             for (int j = 0; j < i; j++)
             {
-                d[j] = entire_contents[copy_count * 256 + j];
+                divided_contents[j] = entire_contents[copy_count * 256 + j];
             }
             for(int j = i; j < 256; j++){
-                d[j] = 0;
+                divided_contents[j] = 0;
             }
 
-            setDataBlock(new_data_block_adress_for_single_indirect_block, d);
+            setDataBlock(indirectAddress, divided_contents);
             copy_count++;
             length -= 256;
-        }
-        setDataBlock(single_indirect_address, contents_of_single_indirect_block);
+        }   
     }
-    
 }
 
 char getAllDirectAdressWithSourceFileName(char *source_file, int result_index)
@@ -424,7 +423,7 @@ void mycat(char **commands)
 	{
         DataBlock datablock = getDataBlock(*(inodeList.direct_address+i));
         for(int j = 0; j < 256; j++){
-            if(*(datablock.contents+j) == '\0' || *(datablock.contents+j) == '\t')
+            if(*(datablock.contents+j) == '\0')
                 break;
             printf("%c", *(datablock.contents+j));
         }
@@ -437,7 +436,7 @@ void mycat(char **commands)
         {
             DataBlock datablock = getDataBlock(*(singleInodeList.contents+i));
 		    for(int j = 0; j < 256; j++){
-                if(*(datablock.contents+j) == '\0' || *(datablock.contents+j) == '\t')
+                if(*(datablock.contents+j) == '\0')
                     break;
 		        printf("%c", *(datablock.contents+j));
             }
@@ -460,7 +459,6 @@ void myshowfile(char **commands)
 	strcpy(arg, *(commands + 3));
 
 	int inode_number = findNameToInode(arg);
-    printf("arg : %s\n", arg);
 
     if(inode_number == 0){
         printf("myshowfile: 그런 파일이나 디렉터리가 없습니다\n");
@@ -528,8 +526,6 @@ void mycp(char **commands)
         return;
     }
 
-    printf("argument : %s, argument2 : %s\n", commands[1], commands[2]);
-
 	unsigned char *host_source_file = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[1]));
 	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[2]));
 	strcpy(host_source_file, commands[1]);
@@ -578,10 +574,7 @@ void mycp(char **commands)
         }
 	}
 
-    printf("inode_number : %d, inode_number_base : %d, host_source_file : %s, new_name : %s, path : %s, dest_file : %s\n", inode_number, inode_number_base, host_source_file, new_name, path, dest_file);
-
     InodeList inodeList = getInodeList(inode_number);
-    printf("inodeList.size : %d\n", inodeList.size);
 
     if(inodeList.size != 0){
         int inode = findEmptyInode();
@@ -734,7 +727,6 @@ void mycpfrom(char **commands)
 	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument2) + 1);
 	strcpy(host_source_file, argument);
 	strcpy(new_name, argument2);
-    printf("argument : %s, argument2 : %s\n", host_source_file, new_name);
 
 	int inode_number = findNameToInode(host_source_file);
 
@@ -742,7 +734,6 @@ void mycpfrom(char **commands)
 	unsigned char *dest_file = (unsigned char *)calloc(sizeof(unsigned char), 8);
 	
 	int inode_number_base = findNameToBaseInode(new_name, path, dest_file);
-
 
     int new_inode_number = findNameToInode(new_name);	
 	
@@ -774,14 +765,12 @@ void mycpfrom(char **commands)
         }
 	}
 
-    printf("inode_number_base : %d, host_source_file : %s, new_name : %s, path : %s, dest_file : %s\n", inode_number_base, host_source_file, new_name, path, dest_file);
-
     SuperBlock super_block = getSuperBlock();
     InodeList inode_list;
     DataBlock data_block;
     FILE *host_txt;
     int host_txt_size;
-    char *buffer;
+    char *buffer = NULL;
     int file_count;
     int inode_list_address_of_dest_file = 0;
 
@@ -798,6 +787,28 @@ void mycpfrom(char **commands)
 
     fseek(host_txt, 0, SEEK_END);
     host_txt_size = ftell(host_txt);
+
+    int size = howUseDataBlockInode();
+
+    if(host_txt_size > (SIZE_DATABLOCK * size) && size <= 8){
+        printf("데이터블럭이 부족합니다\n");
+        free(host_source_file);
+        free(new_name);
+        free(path);
+        free(dest_file);
+        fclose(host_txt);
+        return;
+    }
+    else if(host_txt_size > (SIZE_DATABLOCK * (size - 1)) && size > 8){
+        printf("데이터블럭이 부족합니다\n");
+        free(host_source_file);
+        free(new_name);
+        free(path);
+        free(dest_file);
+        fclose(host_txt);
+        return;
+    }
+
     buffer = malloc(host_txt_size + 1);
     memset(buffer, 0, host_txt_size + 1);
     fseek(host_txt, 0, SEEK_SET);
@@ -811,4 +822,5 @@ void mycpfrom(char **commands)
     free(path);
     free(dest_file);
     free(buffer);
+    fclose(host_txt);
 }

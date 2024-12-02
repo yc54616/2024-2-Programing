@@ -212,7 +212,7 @@ int main(void)
 
         if (execution_result == 0) // exit 명령어 처리 및 Command not found
         {
-            if (strcmp(command[0], "exit") == 0)
+            if (strcmp(command[0], "exit") == 0) 
                 return 0; // 프로그램 종료
             system(temp);
             // printf("Command \"%s\" not found\n", command[0]);
