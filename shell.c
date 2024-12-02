@@ -186,6 +186,7 @@ int main(void)
     int index = 0;
     bool execution_result; // 명령어 실행 성공 여부
     char *inputString;
+    char *temp;
     char *command[500];                              // 배열의 한 칸이 char*으로, 하나의 단어를 지칭
     char *computer_id = "red", *user_id = "redmint"; // 컴퓨터 및 사용자 ID
     // 실행코드
@@ -198,6 +199,9 @@ int main(void)
 	/* 의 신 */
 	printf("]$ ");
         GetInput(&inputString);
+        
+        temp = malloc(sizeof(char) * strlen(inputString) + 1);
+        strcpy(temp, inputString);
         if (inputString[0] == '\0') // 입력값이 없을 경우 continue;
             continue;
 
@@ -210,10 +214,12 @@ int main(void)
         {
             if (strcmp(command[0], "exit") == 0)
                 return 0; // 프로그램 종료
-            printf("Command \"%s\" not found\n", command[0]);
+            system(temp);
+            // printf("Command \"%s\" not found\n", command[0]);
             continue;
         }
 	printf("\n");
+    free(temp);
     }
 }
 // shell
