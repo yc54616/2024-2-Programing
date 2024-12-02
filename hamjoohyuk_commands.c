@@ -81,7 +81,7 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
     unsigned char divided_contents[8][256] = {0}; // 8개의 256바이트 배열 선언(Direct Block)
 
     int copy_count = 0;
-    for (copy_count; copy_count < direct_adress_number && copy_count * 256 < strlen(entire_contents) && copy_count < 8; copy_count++)
+    for (copy_count; copy_count < direct_adress_number && copy_count * 256 < inode_list.size && copy_count < 8; copy_count++)
     { // 256바이트씩 나눠서 배열에 복사
         int i = 0;
         for (i = 0; i < 256; i++)
@@ -112,7 +112,7 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
         unsigned char contents_of_single_indirect_block[256] = {0};
         int single_indirect_address = inode_list.single_indirect_address;
         int needed_extra_datablock_count = 0;
-        int length = strlen(entire_contents);
+        int length = inode_list.size;
         length -= 2048;
         while (length > 0)
         {
@@ -715,16 +715,15 @@ void mycpfrom(char **commands)
     char *argument = commands[1];
 	char *argument2 = commands[2];
 
-    printf("argument : %s, argument2 : %s\n", argument, argument2);
-
-	unsigned char *host_source_file = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
-	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument2));
+	unsigned char *host_source_file = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument) + 1);
+	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument2) + 1);
 	strcpy(host_source_file, argument);
 	strcpy(new_name, argument2);
+    printf("argument : %s, argument2 : %s\n", host_source_file, new_name);
 
 	int inode_number = findNameToInode(host_source_file);
 
-	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(new_name));
+	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(new_name) + 1);
 	unsigned char *dest_file = (unsigned char *)calloc(sizeof(unsigned char), 8);
 	
 	int inode_number_base = findNameToBaseInode(new_name, path, dest_file);

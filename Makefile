@@ -9,7 +9,7 @@ all: $(EXE)
 	rm -rf $(OBJ)
 
 $(EXE): $(OBJ)
-	$(CC) $(OBJ) -o $@
+	$(CC) $(OBJ) -g -o $@
 
 %.o: %.c
 	$(CC) -c $< -o $@
