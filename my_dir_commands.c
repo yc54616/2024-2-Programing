@@ -606,6 +606,23 @@ static void _Tree(unsigned char *name, unsigned char inode_number, int depth, ch
 		int remaining_space = count_files % 32; // It's used for for-loop, that treats the left space without fully using data block.
 		char *inheriting_string;				// In fact, that was a fool. If you are a programmer, you can easily guess the meaning of it, and that guessing may be correct.
 
+		for (i = 0; i < inode_list.reference_count - 1; i++)
+		{
+			data_block = getDataBlock(inode_list.direct_address[i]);
+			for (j = 0; j < 32; j++)
+			{
+				strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);
+				*(*(properties_of_children + count_listed_files) + 7) = data_block.subfiles[j][7];
+				count_listed_files++;
+			}
+		}
+		data_block = getDataBlock(inode_list.direct_address[i]);
+		for (j = 0; j < remaining_space; j++)
+		{
+			strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);
+			*(*(properties_of_children + count_listed_files) + 7) = data_block.subfiles[j][7];
+			count_listed_files++;
+		}
 		if (inode_list.reference_count == 9)
 		{ // If it uses a single indirect pointer
 			indirect_block = getDataBlock(inode_list.single_indirect_address);
@@ -623,26 +640,6 @@ static void _Tree(unsigned char *name, unsigned char inode_number, int depth, ch
 			}
 			/* Processing the one remaining data block, which generally does not take up the entire space */
 			data_block = getDataBlock(indirect_block.contents[i]);
-			for (j = 0; j < remaining_space; j++)
-			{
-				strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);
-				*(*(properties_of_children + count_listed_files) + 7) = data_block.subfiles[j][7];
-				count_listed_files++;
-			}
-		}
-		else
-		{
-			for (i = 0; i < inode_list.reference_count - 1; i++)
-			{
-				data_block = getDataBlock(inode_list.direct_address[i]);
-				for (j = 0; j < 32; j++)
-				{
-					strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);
-					*(*(properties_of_children + count_listed_files) + 7) = data_block.subfiles[j][7];
-					count_listed_files++;
-				}
-			}
-			data_block = getDataBlock(inode_list.direct_address[i]);
 			for (j = 0; j < remaining_space; j++)
 			{
 				strncpy(*(properties_of_children + count_listed_files), data_block.subfiles[j], 7);

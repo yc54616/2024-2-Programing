@@ -567,6 +567,31 @@ int _mycd(chainedDirectory **top, int *cnt, unsigned char *directory_name)
 		inode_list = getInodeList((*top)->my_inode_number);
 		if (inode_list.reference_count == 9)
 		{ // If it uses a single indirect pointer
+			/* looping in the direct pointers */
+			for (i = 0; i < 8; i++)
+			{
+				data_block = getDataBlock(inode_list.direct_address[i]);
+				/* looping in the data block */
+				for (j = 0; j < 32; j++)
+				{
+					if (compare_directory_names(data_block.subfiles[j], directory_name))
+					{ // Found the file ( directory of general )
+						if (getInodeList(data_block.subfiles[j][7]).file_mode == DIRECTORY)
+						{ // It was a directory
+							temp_CD_ptr = (chainedDirectory *)malloc(sizeof(chainedDirectory));
+							strncpy(temp_CD_ptr->my_name, directory_name, 7);
+							temp_CD_ptr->my_inode_number = data_block.subfiles[j][7]; // 8th member of the array.
+							temp_CD_ptr->parent = *top;
+
+							*top = temp_CD_ptr;
+							(*cnt)++;
+							return 0;
+						}
+						else // This is not a directory
+							return -1;
+					}
+				}
+			}
 			indirect_block = getDataBlock(inode_list.single_indirect_address);
 			number_of_using_pointers = indirect_block.contents[0];
 			/* looping in the indirect block */
