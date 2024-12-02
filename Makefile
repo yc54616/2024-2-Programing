@@ -5,7 +5,7 @@ OBJ=$(SOURCE:.c=.o)
 EXE=myfs_shell
 
 all: $(EXE)
-	echo 'execution file "fs" made'
+	echo 'execution file "myfs_shell" made'
 	rm -rf $(OBJ)
 
 $(EXE): $(OBJ)

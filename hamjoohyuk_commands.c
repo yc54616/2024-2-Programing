@@ -103,7 +103,7 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
     {
         data_block_adress[i] = inode_list.direct_address[i];
         setDataBlock(data_block_adress[i], divided_contents[i]);
-        data_block = getDataBlock(data_block_adress[i]);
+        //data_block = getDataBlock(data_block_adress[i]);
     }
 
     if (direct_adress_number > 8)
@@ -122,7 +122,7 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
             setSuperBlock(SIZE_INODELIST + new_data_block_adress_for_single_indirect_block + 1, 1);
             contents_of_single_indirect_block[0] = needed_extra_datablock_count;
             contents_of_single_indirect_block[needed_extra_datablock_count] = new_data_block_adress_for_single_indirect_block;
-            setDataBlock(single_indirect_address, contents_of_single_indirect_block);
+            
             int i = 0;
             for (i = 0; i < 256; i++)
             {
@@ -142,7 +142,9 @@ void writeFileContents(char *entire_contents, int inode_list_adress, int direct_
             copy_count++;
             length -= 256;
         }
+        setDataBlock(single_indirect_address, contents_of_single_indirect_block);
     }
+    
 }
 
 char getAllDirectAdressWithSourceFileName(char *source_file, int result_index)
