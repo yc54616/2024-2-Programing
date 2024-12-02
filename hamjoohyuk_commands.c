@@ -415,7 +415,12 @@ void mycat(char **commands)
         return;
     }
 
-    for (int i = 0; i < inodeList.reference_count; i++)
+    int size = inodeList.reference_count;
+    if(inodeList.single_indirect_address != 0){
+        size -= 1;
+    }
+
+    for (int i = 0; i < size; i++)
 	{
         DataBlock datablock = getDataBlock(*(inodeList.direct_address+i));
         for(int j = 0; j < 256; j++){
@@ -473,7 +478,12 @@ void myshowfile(char **commands)
 
     int flag = false;
     int cnt = 1;
-    for (int i = 0; i < inodeList.reference_count; i++)
+    int size = inodeList.reference_count;
+    if(inodeList.single_indirect_address != 0){
+        size -= 1;
+    }
+
+    for (int i = 0; i < size; i++)
 	{
         DataBlock datablock = getDataBlock(*(inodeList.direct_address+i));
         for(int j = 0; j < 256; j++){
@@ -675,7 +685,12 @@ void mycpto(char **commands)
 
     FILE *fp = fopen(host_dest_file, "w");
 
-    for (int i = 0; i < inodeList.reference_count; i++)
+    int size = inodeList.reference_count;
+    if(inodeList.single_indirect_address != 0){
+        size -= 1;
+    }
+
+    for (int i = 0; i < size; i++)
 	{
         DataBlock datablock = getDataBlock(*(inodeList.direct_address+i));
         for(int j = 0; j < 256; j++){
