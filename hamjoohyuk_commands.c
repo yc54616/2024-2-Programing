@@ -448,7 +448,7 @@ void myshowfile(char **commands)
 {
     if (*(commands + 1) == NULL || *(commands + 2) == NULL || *(commands + 3) == NULL)
     {
-        errmsg("인자가 불충분합니다.\n");
+        errmsg("myshowfile: 인자가 불충분합니다.\n");
         return;
     }
 
