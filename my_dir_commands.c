@@ -51,15 +51,6 @@ void mymv(char **commands)
 		return;
 	}
 	//원래 위치에 있는 파일/디렉토리 이름 지우기
-
-	if(howUseWriteDirectory(inode_number_base) < 0){
-        printf("데이터블럭이 부족합니다\n");
-        free(arg);
-		free(path);
-		free(finalStr);
-		free(new_name);
-        return;
-    }
 	
 	int new_inode_number = findNameToInode(new_name);	
 	
@@ -71,6 +62,15 @@ void mymv(char **commands)
 		writeName[7] = inode_number;
 		
 		if (inode_list.file_mode == DIRECTORY){
+			int how = howUseWriteDirectory(new_inode_number);
+			if(how < 0){
+				printf("데이터블럭이 부족합니다\n");
+				free(arg);
+				free(path);
+				free(finalStr);
+				free(new_name);
+				return;
+			}
 			deleteDirectory(finalStr, inode_number_base);
 			writeDirectory(writeName, new_inode_number, DIRECTORY);
 		}
@@ -84,6 +84,15 @@ void mymv(char **commands)
 		for(int i = 0;i < 7; i++)
 			writeName[i] = new_name[i];
 		writeName[7] = inode_number;
+		int how = howUseWriteDirectory(inode_number_base);
+		if(how < 0){
+			printf("데이터블럭이 부족합니다\n");
+			free(arg);
+			free(path);
+			free(finalStr);
+			free(new_name);
+			return;
+		}
 		if (inode_list.file_mode == DIRECTORY)
 			writeDirectory(writeName, inode_number_base, DIRECTORY);
 		else
@@ -136,7 +145,6 @@ void myrm(char **commands)
 	else
 	{
 		setSuperBlock(inode_number, 0);
-		setSuperBlock(SIZE_INODELIST + inode_number, 0);
 
 		deleteDirectory(finalStr, inode_number_base);
 		deleteInDirectory(inode_number);
@@ -193,15 +201,18 @@ void mytouch(char **commands)
         return;
     }
 
-	if(findEmptyDataBlock() == -1 || findEmptyInode() == -1){
-		printf("사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
-		return;
-	}
-
 	char *argument = commands[1];
 
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	strcpy(arg, argument);
+
+	int emptyDataBlock = findEmptyDataBlock();
+	int emptyInode = findEmptyInode();
+	if(emptyDataBlock == -1 || emptyInode == -1){
+		printf("사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		free(arg);
+		return;
+	}
 
 	int inode_number = findNameToInode(arg);
 
@@ -210,7 +221,8 @@ void mytouch(char **commands)
 	
 	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
 
-	if(howUseWriteDirectory(inode_number_base) < 0){
+	int how = howUseWriteDirectory(inode_number_base);
+	if(how < 0){
         printf("데이터블럭이 부족합니다\n");
         free(arg);
 		free(path);
@@ -258,7 +270,8 @@ void mytouch(char **commands)
 		};
 
 		setSuperBlock(inode_number, 1);
-		setSuperBlock(SIZE_INODELIST + inode_number, 1);
+		setSuperBlock(SIZE_INODELIST + dataBlock_num + 1, 1);
+		printf("%d\n", dataBlock_num);
 
 		setInodeList(inode_number, GENERAL, curTime, curTime, 0, 1, address, 0);
 
@@ -280,15 +293,17 @@ void mymkdir(char **commands)
         return;
     }
 
-	if(findEmptyDataBlock() == -1 || findEmptyInode() == -1){
-		printf("사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
-		return;
-	}
-
 	char *argument = commands[1];
 
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	strcpy(arg, argument);
+
+	int emptyDataBlock = findEmptyDataBlock();
+	int emptyInode = findEmptyInode();
+	if(emptyDataBlock == -1 || emptyInode == -1){
+		printf("사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		return;
+	}
 
 	if(findNameToInode(arg) != 0){
 		printf("mymkdir: 디렉터리를 만들 수 없습니다: 파일이 있습니다\n");
@@ -308,13 +323,15 @@ void mymkdir(char **commands)
 		return;
 	}
 
-	if(howUseWriteDirectory(inode_number) < 0){
+	int how = howUseWriteDirectory(inode_number);
+	if(how < 0){
         printf("데이터블럭이 부족합니다\n");
         free(arg);
 		free(path);
 		free(finalStr);
         return;
     }
+
 
 	chainedDirectory *virtual_working_directory;
 	int virtual_depth_working_directory = depth_working_directory;
@@ -401,7 +418,6 @@ void myrmdir(char **commands)
 	else
 	{
 		setSuperBlock(inode_number, 0);
-		setSuperBlock(SIZE_INODELIST + inode_number, 0);
 
 		deleteDirectory(finalStr, inode_number_base);
 		deleteInDirectory(inode_number);

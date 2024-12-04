@@ -181,7 +181,7 @@ int howUseWriteDirectory(int inode)
 			i++;
 		}
 
-		return howUseDataBlockInode() - i;	
+		return (howUseDataBlockInode() - i);	
 	}
 	else // directs 주소에 저장할 때 
 	{
@@ -190,7 +190,7 @@ int howUseWriteDirectory(int inode)
 			i++;
 		}
 
-		return howUseDataBlockInode() - i;	
+		return (howUseDataBlockInode() - i);	
 	}
 }
 

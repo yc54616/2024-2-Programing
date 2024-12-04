@@ -34,7 +34,7 @@ typedef struct {
 
 	time_t access_date;
 	time_t birth_date;
-	unsigned int size;
+	int size;
 	unsigned char reference_count; //referring to number of pointers are consisted by a file.
 	unsigned char direct_address[SIZE_DIRECT_POINTER];
 	unsigned char single_indirect_address;
