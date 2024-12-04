@@ -161,6 +161,39 @@ void deleteDirectory(char *name, int inode)
 	
 }
 
+int howUseWriteDirectory(int inode)
+{
+	InodeList inode_list = getInodeList(inode);	
+	time_t curTime;
+	time(&curTime);
+	int useDataBlockInode, indirectAddress;
+
+	bool indirectAddressUse = ((inode_list.reference_count > SIZE_DIRECT_POINTER) || (inode_list.reference_count == SIZE_DIRECT_POINTER && inode_list.size%256 == 0)) ? true : false;
+
+	if (indirectAddressUse)
+	{
+		int i = 0;
+		if(inode_list.single_indirect_address == 0){ // 처음 indirect_address 에 저장할 때, indirect_address으로 사용할 데이터 block 찾기
+			i++;
+		}
+
+		if(inode_list.size%256 == 0){ // 새로운 데이터 블럭을 생성해야 할 때
+			i++;
+		}
+
+		return howUseDataBlockInode() - i;	
+	}
+	else // directs 주소에 저장할 때 
+	{
+		int i = 0;
+		if(inode_list.size%256 == 0){
+			i++;
+		}
+
+		return howUseDataBlockInode() - i;	
+	}
+}
+
 // name : 디렉토리 이름, 마지막 바이트에는 가리키는 inode ex) lo     7
 // inode : inode 가 가리키는 datablock 들
 // 현재 wokring 디렉토리에 문자를 쓰도록 설계됨

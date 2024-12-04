@@ -31,6 +31,7 @@ struct FunctionCallByString
 /* functions */
 void deleteInDirectory(int inode);
 void deleteDirectory(char *name, int inode);
+int howUseWriteDirectory(int inode);
 void writeDirectory(char *name, int inode, int type);
 int getNowWorkingDirectoryInodeNumber();
 unsigned char findNameToBaseInode(char *argument, unsigned char *tmpPath, unsigned char *tmpFinalStr);

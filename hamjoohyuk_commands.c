@@ -581,6 +581,15 @@ void mycp(char **commands)
         }
 	}
 
+    if(howUseWriteDirectory(inode_number_base) < 0){
+        printf("데이터블럭이 부족합니다\n");
+        free(host_source_file);
+        free(new_name);
+        free(path);
+        free(dest_file);
+        return;
+    }
+
     InodeList inodeList = getInodeList(inode_number);
 
     if(inodeList.size != 0){
@@ -771,6 +780,15 @@ void mycpfrom(char **commands)
             return;
         }
 	}
+
+    if(howUseWriteDirectory(inode_number_base) < 0){
+        printf("데이터블럭이 부족합니다\n");
+        free(host_source_file);
+        free(new_name);
+        free(path);
+        free(dest_file);
+        return;
+    }
 
     SuperBlock super_block = getSuperBlock();
     InodeList inode_list;

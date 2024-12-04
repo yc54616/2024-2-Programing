@@ -51,6 +51,15 @@ void mymv(char **commands)
 		return;
 	}
 	//원래 위치에 있는 파일/디렉토리 이름 지우기
+
+	if(howUseWriteDirectory(inode_number_base) < 0){
+        printf("데이터블럭이 부족합니다\n");
+        free(arg);
+		free(path);
+		free(finalStr);
+		free(new_name);
+        return;
+    }
 	
 	int new_inode_number = findNameToInode(new_name);	
 	
@@ -199,7 +208,15 @@ void mytouch(char **commands)
 	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	unsigned char *finalStr = (unsigned char *)calloc(sizeof(unsigned char), 8);
 	
-	findNameToBaseInode(arg, path, finalStr);
+	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
+
+	if(howUseWriteDirectory(inode_number_base) < 0){
+        printf("데이터블럭이 부족합니다\n");
+        free(arg);
+		free(path);
+		free(finalStr);
+        return;
+    }
 
 	time_t curTime;
 	InodeList inode_list;
@@ -290,6 +307,14 @@ void mymkdir(char **commands)
 		free(finalStr);
 		return;
 	}
+
+	if(howUseWriteDirectory(inode_number) < 0){
+        printf("데이터블럭이 부족합니다\n");
+        free(arg);
+		free(path);
+		free(finalStr);
+        return;
+    }
 
 	chainedDirectory *virtual_working_directory;
 	int virtual_depth_working_directory = depth_working_directory;
