@@ -206,12 +206,10 @@ void mytouch(char **commands)
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	strcpy(arg, argument);
 
-	int emptyDataBlock = findEmptyDataBlock();
-	int emptyInode = findEmptyInode();
-	if(emptyDataBlock == -1 || emptyInode == -1){
-		errmsg("mytouch: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+	if(findEmptyDataBlock() == -1 || findEmptyInode() == -1){
+		errmsg("mycp: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
 		free(arg);
-		return;
+        return;
 	}
 
 	int inode_number = findNameToInode(arg);
@@ -297,16 +295,16 @@ void mymkdir(char **commands)
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	strcpy(arg, argument);
 
-	int emptyDataBlock = findEmptyDataBlock();
-	int emptyInode = findEmptyInode();
-	if(emptyDataBlock == -1 || emptyInode == -1){
-		errmsg("mymkdir: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
-		return;
+	if(findEmptyDataBlock() == -1 || findEmptyInode() == -1){
+		errmsg("mycp: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		free(arg);
+        return;
 	}
 
 	if(findNameToInode(arg) != 0){
 		errmsg("mymkdir: 디렉터리를 만들 수 없습니다: 파일이 있습니다\n");
-		return;
+		free(arg);
+        return;
 	}
 
 	unsigned char *path = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));

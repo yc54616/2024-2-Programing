@@ -528,17 +528,11 @@ void mycp(char **commands)
         return;
     }
 
-	unsigned char *host_source_file = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[1]));
-	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[2]));
+    printf("command[1]:%s, command[2]:%s\n", commands[1], commands[2]);
+	unsigned char *host_source_file = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[1])+1);
+	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[2])+1);
 	strcpy(host_source_file, commands[1]);
 	strcpy(new_name, commands[2]);
-
-    int emptyDataBlock = findEmptyDataBlock();
-	int emptyInode = findEmptyInode();
-	if(emptyDataBlock == -1 || emptyInode == -1){
-		errmsg("mycp: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
-		return;
-	}
 
 	int inode_number = findNameToInode(host_source_file);
 
@@ -581,6 +575,15 @@ void mycp(char **commands)
             free(dest_file);
             return;
         }
+	}
+
+	if(findEmptyDataBlock() == -1 || findEmptyInode() == -1){
+		errmsg("mycp: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		free(host_source_file);
+        free(new_name);
+        free(path);
+        free(dest_file);
+        return;
 	}
 
     int how = howUseWriteDirectory(inode_number_base);
