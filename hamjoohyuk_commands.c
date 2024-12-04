@@ -493,7 +493,8 @@ void myshowfile(char **commands)
                 flag = false;
             if(flag)
                 printf("%c", *(datablock.contents+j));
-            cnt++;
+            if(*(datablock.contents+j) != ' ')
+                cnt++;
         }
 	}
 
@@ -512,7 +513,8 @@ void myshowfile(char **commands)
                     flag = false;
                 if(flag)
                     printf("%c", *(datablock.contents+j));
-                cnt++;
+                if(*(datablock.contents+j) != ' ')
+                    cnt++;
             }
         }
     }

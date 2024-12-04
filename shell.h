@@ -20,7 +20,7 @@ struct FunctionCallByString g_command_list[500] =
         commandIntoFunction(clear),
         commandIntoFunction(myinode),
         commandIntoFunction(mydatablock),
-        commandIntoFunction(mystatus),
+        commandIntoFunction(mystate),
         commandIntoFunction(mypwd),
         commandIntoFunction(mycd),
         commandIntoFunction(mytree),
