@@ -827,7 +827,8 @@ void myinode(char **commands)
 	inode_list = getInodeList(inode_number);
 	direct_pointer_count = (inode_list.reference_count > SIZE_DIRECT_POINTER) ? SIZE_DIRECT_POINTER : inode_list.reference_count;
 	printf("종류 : %s\n", (inode_list.file_mode == DIRECTORY) ? "디렉토리" : "파일");
-	printf("생성일자 : %ld\n", inode_list.birth_date);
+	struct tm *pt = localtime(&inode_list.birth_date);
+	printf("생성일자 : %02d/%02d/%02d %02d:%02d:%02d\n", (pt->tm_year + 1900), (pt->tm_mon), (pt->tm_mday), (pt->tm_hour), (pt->tm_min), (pt->tm_sec));
 	printf("크기 : %d\n", inode_list.size);
 	printf("직접 블럭 목록 :\n");
 	for (i = 0; i < direct_pointer_count; i++)
