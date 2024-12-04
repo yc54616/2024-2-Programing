@@ -527,8 +527,7 @@ void mycp(char **commands)
         errmsg("mycp: 인자가 불충분합니다.\n"); // 임시
         return;
     }
-
-    printf("command[1]:%s, command[2]:%s\n", commands[1], commands[2]);
+    
 	unsigned char *host_source_file = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[1])+1);
 	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[2])+1);
 	strcpy(host_source_file, commands[1]);

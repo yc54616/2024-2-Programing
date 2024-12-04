@@ -207,7 +207,7 @@ void mytouch(char **commands)
 	strcpy(arg, argument);
 
 	if(findEmptyDataBlock() == -1 || findEmptyInode() == -1){
-		errmsg("mycp: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		errmsg("mytouch: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
 		free(arg);
         return;
 	}
@@ -296,7 +296,7 @@ void mymkdir(char **commands)
 	strcpy(arg, argument);
 
 	if(findEmptyDataBlock() == -1 || findEmptyInode() == -1){
-		errmsg("mycp: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		errmsg("mymkdir: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
 		free(arg);
         return;
 	}
