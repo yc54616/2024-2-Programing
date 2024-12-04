@@ -55,5 +55,5 @@ int cd(chainedDirectory **, int *, unsigned char *);
 
 void myinode(char **command);
 void mydatablock(char **command);
-void mystatus(char **command);
+void mystate(char **command);
 #endif

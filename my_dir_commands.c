@@ -20,6 +20,12 @@ int _compare_files(const void *file1, const void *file2)
 
 void mymv(char **commands)
 {
+	if (*(commands + 1) == NULL || *(commands + 2) == NULL)
+    {
+        errmsg("인자가 불충분합니다.\n");
+        return;
+    }
+
 	char *argument = commands[1];
 	char *argument2 = commands[2];
 
@@ -86,6 +92,12 @@ void mymv(char **commands)
 // 2. 디렉토리 내용만 지우는데 -> 파일 atablock 내둉도 지우도록
 void myrm(char **commands)
 {
+	if (*(commands + 1) == NULL)
+    {
+        errmsg("인자가 불충분합니다.\n");
+        return;
+    }
+
 	char *argument = commands[1];
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	strcpy(arg, argument);
@@ -130,12 +142,13 @@ void myrm(char **commands)
 void mymkfs(char **commands)
 {
 	char check[100] = "y";
+	char tmp[100];
 	bool flag = 0;
 	if ((access(FILENAME, 0) != -1))
 	{
 		printf("파일시스템이 있습니다. 다시 만들겠습니까? (y/n) ");
-		fgets(check, sizeof(check), stdin);
-		check[1] = 0;
+		scanf("%s", check);
+		fgets(tmp, sizeof(check), stdin);
 		flag = 1;
 	}
 	else
@@ -143,7 +156,7 @@ void mymkfs(char **commands)
 		printf("파일시스템이 없습니다. 파일시스템을 만듭니다.\n");
 	}
 
-	if (check[0] == 'y')
+	if (check[0] == 'y' && check[1] == '\x00')
 	{
 		if (flag)
 			printf("파일시스템을 다시 만들었습니다.\n");
@@ -165,6 +178,12 @@ void mymkfs(char **commands)
 
 void mytouch(char **commands)
 {
+	if (*(commands + 1) == NULL)
+    {
+        errmsg("인자가 불충분합니다.\n");
+        return;
+    }
+
 	char *argument = commands[1];
 
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
@@ -233,6 +252,12 @@ void mytouch(char **commands)
 
 void mymkdir(char **commands)
 {
+	if (*(commands + 1) == NULL)
+    {
+        errmsg("인자가 불충분합니다.\n");
+        return;
+    }
+
 	char *argument = commands[1];
 
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
@@ -295,6 +320,12 @@ void mymkdir(char **commands)
 
 void myrmdir(char **commands)
 {
+	if (*(commands + 1) == NULL)
+    {
+        errmsg("인자가 불충분합니다.\n");
+        return;
+    }
+	
 	char *argument = commands[1];
 	unsigned char *arg = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	strcpy(arg, argument);

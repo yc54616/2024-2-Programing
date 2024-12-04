@@ -875,7 +875,7 @@ void mydatablock(char **commands)
 	printf("\n");
 }
 
-void mystatus(char **commands) {
+void mystate(char **commands) {
 	SuperBlock super_block;
 	int i, j, k;
 	int index;
