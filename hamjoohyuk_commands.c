@@ -597,6 +597,15 @@ void mycp(char **commands)
 
     InodeList inodeList = getInodeList(inode_number);
 
+    if(inodeList.file_mode == DIRECTORY){
+        errmsg("mycp: 디렉토리는 복사할 수 없습니다\n");
+        free(host_source_file);
+        free(new_name);
+        free(path);
+        free(dest_file);
+        return;
+    }
+
     if(inodeList.size != 0){
         int inode = findEmptyInode();
         unsigned char directList[8] = {0,};
@@ -644,7 +653,7 @@ void mycp(char **commands)
         dest_file[7] = inode;
         writeDirectory(dest_file, inode_number_base, DIRECTORY);
 
-        setInodeList(inode, inodeList.file_mode, inodeList.access_date, inodeList.birth_date, inodeList.size, inodeList.reference_count, directList, singleList);
+        setInodeList(inode, GENERAL, inodeList.access_date, inodeList.birth_date, inodeList.size, inodeList.reference_count, directList, singleList);
         
     }
     else{
@@ -657,7 +666,7 @@ void mycp(char **commands)
         setSuperBlock(SIZE_INODELIST + dataBlock + 1, 1);
         writeDirectory(dest_file, inode_number_base, DIRECTORY);
         unsigned char direct_address[8] = {dataBlock,};
-        setInodeList(inode, inodeList.file_mode, inodeList.access_date, inodeList.birth_date, inodeList.size, inodeList.reference_count, direct_address, inodeList.single_indirect_address);
+        setInodeList(inode, GENERAL, inodeList.access_date, inodeList.birth_date, inodeList.size, inodeList.reference_count, direct_address, inodeList.single_indirect_address);
     }
 
     free(host_source_file);
