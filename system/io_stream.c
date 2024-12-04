@@ -152,7 +152,7 @@ void setFilesystem(SuperBlock sb, InodeList in[SIZE_INODELIST], DataBlock db[SIZ
 {
 	FILE *file;
 	unsigned char BootBlockArray[SIZE_BOOTBLOCK] = {0, 0};
-	file = fopen(FILENAME, "rb+");
+	file = fopen(FILENAME, "wb+");
 	fwrite(&BootBlockArray, sizeof(BootBlockArray), 1, file);
 	fwrite(&sb, sizeof(sb), 1, file);
 	fwrite(in, sizeof(*in) * SIZE_INODELIST, 1, file);
