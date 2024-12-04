@@ -152,7 +152,7 @@ void setFilesystem(SuperBlock sb, InodeList in[SIZE_INODELIST], DataBlock db[SIZ
 {
 	FILE *file;
 	unsigned char BootBlockArray[SIZE_BOOTBLOCK] = {0, 0};
-	file = fopen(FILENAME, "wb+");
+	file = fopen(FILENAME, "w+");
 	fwrite(&BootBlockArray, sizeof(BootBlockArray), 1, file);
 	fwrite(&sb, sizeof(sb), 1, file);
 	fwrite(in, sizeof(*in) * SIZE_INODELIST, 1, file);
@@ -163,7 +163,7 @@ void setFilesystem(SuperBlock sb, InodeList in[SIZE_INODELIST], DataBlock db[SIZ
 void setSuperBlock(int bitIndex, bool bit)
 { // 1 ~ 384로 inode와 datablock index 다 합쳐서
 	FILE *file;
-	file = fopen(FILENAME, "rb+");
+	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
 
 	if (bitIndex < 1 || bitIndex > (SIZE_INODELIST + SIZE_DATABLOCK))
@@ -190,7 +190,7 @@ void initInodeList(int index) // 1~128
 {																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
 	FILE *file;
 	int i;
-	file = fopen(FILENAME, "rb+");
+	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
 	fseek(file, SIZE_SUPERBLOCK, SEEK_CUR);
 	// 1 -> 0,0
@@ -224,7 +224,7 @@ void setInodeList(int index, bool file_mode, time_t access_date, time_t birth_da
 {																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
 FILE *file;
 	int i;
-	file = fopen(FILENAME, "rb+");
+	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
 	fseek(file, SIZE_SUPERBLOCK, SEEK_CUR);
 	// 1 -> 0,0
@@ -251,7 +251,7 @@ FILE *file;
 void initDataBlock(int address) // 1~128
 {																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
 	FILE *file;
-	file = fopen(FILENAME, "rb+");
+	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
 	fseek(file, SIZE_SUPERBLOCK, SEEK_CUR);
 	fseek(file, SIZE_INODELIST * sizeof(InodeList), SEEK_CUR);
@@ -275,7 +275,7 @@ void initDataBlock(int address) // 1~128
 void setDataBlock(int address, unsigned char *contents) // 1~128
 {																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
 	FILE *file;
-	file = fopen(FILENAME, "rb+");
+	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
 	fseek(file, SIZE_SUPERBLOCK, SEEK_CUR);
 	fseek(file, SIZE_INODELIST * sizeof(InodeList), SEEK_CUR);
@@ -303,7 +303,7 @@ SuperBlock getSuperBlock()
 	SuperBlock result;
 
 	// prepare to read file
-	file = fopen(FILENAME, "rb");
+	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
 
 	fread(result.inode_list, sizeof(Byte), SIZE_INODELIST_IN_SUPERBLOCK, file); // read Inodes
@@ -320,7 +320,7 @@ InodeList getInodeList(int Inode)
 	InodeList result;
 
 	// prepare to read file
-	file = fopen(FILENAME, "rb");
+	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
 	fseek(file, SIZE_SUPERBLOCK * sizeof(Byte), SEEK_CUR); // skip superblock sector
 	// I recommend you to use the form of "SIZE * sizeof its unit" becauseof consistency of the whole code.
@@ -341,7 +341,7 @@ DataBlock getDataBlock(int Address)
 	DataBlock result;
 
 	// prepare to read file
-	file = fopen(FILENAME, "rb");
+	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
 	fseek(file, SIZE_SUPERBLOCK * sizeof(Byte), SEEK_CUR);     // skip superblock sector
 	fseek(file, SIZE_INODELIST * sizeof(InodeList), SEEK_CUR); // skip superblock sector
