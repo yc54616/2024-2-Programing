@@ -644,7 +644,7 @@ void mycp(char **commands)
         dest_file[7] = inode;
         writeDirectory(dest_file, inode_number_base, DIRECTORY);
 
-        setInodeList(inode, GENERAL, inodeList.access_date, inodeList.birth_date, inodeList.size, inodeList.reference_count, directList, singleList);
+        setInodeList(inode, inodeList.file_mode, inodeList.access_date, inodeList.birth_date, inodeList.size, inodeList.reference_count, directList, singleList);
         
     }
     else{
@@ -657,7 +657,7 @@ void mycp(char **commands)
         setSuperBlock(SIZE_INODELIST + dataBlock + 1, 1);
         writeDirectory(dest_file, inode_number_base, DIRECTORY);
         unsigned char direct_address[8] = {dataBlock,};
-        setInodeList(inode, GENERAL, inodeList.access_date, inodeList.birth_date, inodeList.size, inodeList.reference_count, direct_address, inodeList.single_indirect_address);
+        setInodeList(inode, inodeList.file_mode, inodeList.access_date, inodeList.birth_date, inodeList.size, inodeList.reference_count, direct_address, inodeList.single_indirect_address);
     }
 
     free(host_source_file);
