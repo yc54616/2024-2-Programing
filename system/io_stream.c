@@ -115,8 +115,8 @@ void initFilesystem()
 {
 
 	SuperBlock sb; // = getSuperBlock();
-	InodeList in[SIZE_INODELIST]; //SIZE_INODELIST == 128
-	DataBlock db[SIZE_DATABLOCK];  //SIZE_DATABLOCK == 256
+	InodeList in[SIZE_INODELIST] = {0,}; //SIZE_INODELIST == 128
+	DataBlock db[SIZE_DATABLOCK] = {0,};  //SIZE_DATABLOCK == 256
 	int i, j;
 	for (int i = 0; i < 16; i++)
 	{
