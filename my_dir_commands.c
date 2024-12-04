@@ -158,22 +158,24 @@ void myrm(char **commands)
 
 void mymkfs(char **commands)
 {
-	char check[100] = "y";
+	char check[100];
 	char tmp[100];
 	bool flag = 0;
-	if ((access(FILENAME, 0) != -1) && commands[0][0] != '!')
+	if (access(FILENAME, 0) != -1 && commands[0][0] != '!')
 	{
 		printf("파일시스템이 있습니다. 다시 만들겠습니까? (y/n) ");
 		scanf("%s", check);
 		fgets(tmp, sizeof(check), stdin);
 		flag = 1;
+		strcpy(check, "y");
 	}
 	else if(access(FILENAME, 0) == -1)
 	{
 		printf("파일시스템이 없습니다. 파일시스템을 만듭니다.\n");
+		strcpy(check, "y");
 	}
 
-	if (check[0] == 'y' && commands[0][0] != '!')
+	if (check[0] == 'y')
 	{
 		if (flag)
 			printf("파일시스템을 다시 만들었습니다.\n");

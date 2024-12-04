@@ -730,7 +730,7 @@ void mycpto(char **commands)
         {
             DataBlock datablock = getDataBlock(*(singleInodeList.contents+i));
 		    for(int j = 0; j < 256; j++){
-                if(*(datablock.contents+j) == '\0' || *(datablock.contents+j) == '\t')
+                if(*(datablock.contents+j) == '\0')
                     break;
 		        fprintf(fp, "%c", *(datablock.contents+j));
             }
