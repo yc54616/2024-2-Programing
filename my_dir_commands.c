@@ -173,7 +173,7 @@ void mymkfs(char **commands)
 		printf("파일시스템이 없습니다. 파일시스템을 만듭니다.\n");
 	}
 
-	if (check[0] == 'y' && check[1] == '\x00')
+	if (check[0] == 'y' && commands[0][0] != '!')
 	{
 		if (flag)
 			printf("파일시스템을 다시 만들었습니다.\n");
