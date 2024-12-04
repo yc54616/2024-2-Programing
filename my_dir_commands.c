@@ -144,6 +144,7 @@ void mymkfs(char **commands)
 	char check[100] = "y";
 	char tmp[100];
 	bool flag = 0;
+	printf("%d\n", commands[0][0]);
 	if ((access(FILENAME, 0) != -1))
 	{
 		printf("파일시스템이 있습니다. 다시 만들겠습니까? (y/n) ");
@@ -183,6 +184,11 @@ void mytouch(char **commands)
         errmsg("인자가 불충분합니다.\n");
         return;
     }
+
+	if(findEmptyDataBlock() == -1 || findEmptyInode() == -1){
+		printf("사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		return;
+	}
 
 	char *argument = commands[1];
 
@@ -257,6 +263,11 @@ void mymkdir(char **commands)
         errmsg("인자가 불충분합니다.\n");
         return;
     }
+
+	if(findEmptyDataBlock() == -1 || findEmptyInode() == -1){
+		printf("사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		return;
+	}
 
 	char *argument = commands[1];
 

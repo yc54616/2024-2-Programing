@@ -11,6 +11,7 @@
         "string.h": "c",
         "file_system.h": "c",
         "io_stream.h": "c",
-        "data_struct.h": "c"
+        "data_struct.h": "c",
+        "stdbool.h": "c"
     }
 }

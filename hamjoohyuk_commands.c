@@ -528,6 +528,11 @@ void mycp(char **commands)
         return;
     }
 
+    if(findEmptyDataBlock() == -1 || findEmptyInode() == -1){
+		printf("사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		return;
+	}
+
 	unsigned char *host_source_file = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[1]));
 	unsigned char *new_name = (unsigned char *)calloc(sizeof(unsigned char), strlen(commands[2]));
 	strcpy(host_source_file, commands[1]);
