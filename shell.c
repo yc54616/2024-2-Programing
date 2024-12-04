@@ -190,7 +190,11 @@ int main(void)
     char *command[500] = {0,};                              // 배열의 한 칸이 char*으로, 하나의 단어를 지칭
     char *computer_id = "red", *user_id = "redmint"; // 컴퓨터 및 사용자 ID
     // 실행코드
-    mymkfs(command);
+    char *tempCommand = (char *)calloc(sizeof(char), 1);  
+    tempCommand[0] = '!';
+    mymkfs(&tempCommand);
+    free(tempCommand);
+    
     while (1)
     { // {1.ID및 WD출력   2.command 입력받기 실행하기} 반복
 	/* 정상화 */
