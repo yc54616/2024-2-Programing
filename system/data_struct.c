@@ -944,8 +944,8 @@ void mystate(char **commands) {
 
 	printf("Data Block state : \n");
 	printf("    Total : %d blocks / %ld bytes\n", SIZE_DATABLOCK, SIZE_DATABLOCK * sizeof(DataBlock));
-	printf("    Used : %d / %ld bytes\n", used, used * sizeof(DataBlock));
-	printf("    Available : %d / %ld bytes\n", SIZE_DATABLOCK - used, (SIZE_DATABLOCK - used) * sizeof(DataBlock));
+	printf("    Used : %d blocks / %ld bytes\n", used, used * sizeof(DataBlock));
+	printf("    Available : %d blocks / %ld bytes\n", SIZE_DATABLOCK - used, (SIZE_DATABLOCK - used) * sizeof(DataBlock));
 	printf("    Data Block Map :\n");
 	index = 0;
 	for (i = 0; i < 4; i++)
