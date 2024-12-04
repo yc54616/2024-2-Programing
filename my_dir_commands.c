@@ -271,7 +271,6 @@ void mytouch(char **commands)
 
 		setSuperBlock(inode_number, 1);
 		setSuperBlock(SIZE_INODELIST + dataBlock_num + 1, 1);
-		printf("%d\n", dataBlock_num);
 
 		setInodeList(inode_number, GENERAL, curTime, curTime, 0, 1, address, 0);
 
