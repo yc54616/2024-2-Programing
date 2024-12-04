@@ -144,7 +144,6 @@ void mymkfs(char **commands)
 	char check[100] = "y";
 	char tmp[100];
 	bool flag = 0;
-	printf("%d\n", commands[0][0]);
 	if ((access(FILENAME, 0) != -1))
 	{
 		printf("파일시스템이 있습니다. 다시 만들겠습니까? (y/n) ");
