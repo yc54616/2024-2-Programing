@@ -831,7 +831,7 @@ void myinode(char **commands)
 
 	if (commands[1] == NULL)
 	{
-		errmsg("The first argument must be filled!\n");
+		errmsg("myinode: The first argument must be filled!\n");
 		return;
 	}
 
@@ -839,21 +839,21 @@ void myinode(char **commands)
 	{
 		if (c < '0' || c > '9')
 		{
-			errmsg("The first arg must be positive integer format!\n");
+			errmsg("myinode: The first arg must be positive integer format!\n");
 			return;
 		}
 	}
 
 	if (i == 0)
 	{
-		errmsg("The first arg must be filled!\n");
+		errmsg("myinode: The first arg must be filled!\n");
 		return;
 	}
 
 	inode_number = strtol(commands[1], NULL, 10);
 	if (!(inode_number >= 1 && inode_number <= SIZE_INODELIST))
 	{
-		errmsg("The first arg must be in the (closed) section-[1, %d]!\n", SIZE_INODELIST);
+		errmsg("myinode: The first arg must be in the (closed) section-[1, %d]!\n", SIZE_INODELIST);
 		return;
 	}
 
@@ -877,7 +877,7 @@ void mydatablock(char **commands)
 
 	if (commands[1] == NULL)
 	{
-		errmsg("The first argument must be filled!\n");
+		errmsg("mydatablock: The first argument must be filled!\n");
 		return;
 	}
 
@@ -885,21 +885,21 @@ void mydatablock(char **commands)
 	{
 		if (c < '0' || c > '9')
 		{
-			errmsg("The first arg must be positive integer format!\n");
+			errmsg("mydatablock: The first arg must be positive integer format!\n");
 			return;
 		}
 	}
 
 	if (i == 0)
 	{
-		errmsg("The first arg must be filled!\n");
+		errmsg("mydatablock: The first arg must be filled!\n");
 		return;
 	}
 
 	block_address = strtol(commands[1], NULL, 10);
 	if (!(block_address >= 0 && block_address <= SIZE_DATABLOCK - 1))
 	{
-		errmsg("The first arg must be in the (closed) section-[0, %d]!\n", SIZE_DATABLOCK - 1);
+		errmsg("mydatablock: The first arg must be in the (closed) section-[0, %d]!\n", SIZE_DATABLOCK - 1);
 		return;
 	}
 

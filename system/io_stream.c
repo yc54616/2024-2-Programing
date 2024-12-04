@@ -45,7 +45,6 @@ void writeIndirectDataBlock(int address, int datablockIndex){
 	DataBlock data_Block = getDataBlock(datablockIndex);
 	int size = data_Block.contents[0];
 	if(size == 256){
-		printf("this datablock over!\n");
 		return;
 	}
 	size += 1;

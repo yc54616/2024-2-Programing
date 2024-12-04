@@ -22,7 +22,7 @@ void mymv(char **commands)
 {
 	if (*(commands + 1) == NULL || *(commands + 2) == NULL)
     {
-        errmsg("인자가 불충분합니다.\n");
+        errmsg("mymv: 인자가 불충분합니다.\n");
         return;
     }
 
@@ -43,7 +43,7 @@ void mymv(char **commands)
 
 	if (inode_number == 0)
 	{
-		printf("mymv: No such File\n");
+		errmsg("mymv: No such File\n");
 		free(arg);
 		free(path);
 		free(finalStr);
@@ -64,7 +64,7 @@ void mymv(char **commands)
 		if (inode_list.file_mode == DIRECTORY){
 			int how = howUseWriteDirectory(new_inode_number);
 			if(how < 0){
-				printf("데이터블럭이 부족합니다\n");
+				errmsg("mymv: 데이터블럭이 부족합니다\n");
 				free(arg);
 				free(path);
 				free(finalStr);
@@ -75,7 +75,7 @@ void mymv(char **commands)
 			writeDirectory(writeName, new_inode_number, DIRECTORY);
 		}
 		else
-			printf("파일을 옮길 수 없습니다.\n");
+			errmsg("mymv: 파일을 옮길 수 없습니다.\n");
 	}
 	else {//파일 이름을 바꾸는 경우
 		deleteDirectory(finalStr, inode_number_base);
@@ -86,7 +86,7 @@ void mymv(char **commands)
 		writeName[7] = inode_number;
 		int how = howUseWriteDirectory(inode_number_base);
 		if(how < 0){
-			printf("데이터블럭이 부족합니다\n");
+			errmsg("mymv: 데이터블럭이 부족합니다\n");
 			free(arg);
 			free(path);
 			free(finalStr);
@@ -112,7 +112,7 @@ void myrm(char **commands)
 {
 	if (*(commands + 1) == NULL)
     {
-        errmsg("인자가 불충분합니다.\n");
+        errmsg("myrm: 인자가 불충분합니다.\n");
         return;
     }
 
@@ -129,7 +129,7 @@ void myrm(char **commands)
 
 	if (inode_number == 0)
 	{
-		printf("myrm: Cannot remove: No such file or directory.\n");
+		errmsg("myrm: Cannot remove: No such file or directory.\n");
 		free(arg);
 		free(path);
 		free(finalStr);
@@ -139,7 +139,7 @@ void myrm(char **commands)
 	InodeList inode_list = getInodeList(inode_number);
 	if (inode_list.file_mode == DIRECTORY)
 	{
-		printf("myrm : It is a directory. Please enter the file name. \n");
+		errmsg("myrm : It is a directory. Please enter the file name. \n");
 		return;
 	}
 	else
@@ -197,7 +197,7 @@ void mytouch(char **commands)
 {
 	if (*(commands + 1) == NULL)
     {
-        errmsg("인자가 불충분합니다.\n");
+        errmsg("mytouch: 인자가 불충분합니다.\n");
         return;
     }
 
@@ -209,7 +209,7 @@ void mytouch(char **commands)
 	int emptyDataBlock = findEmptyDataBlock();
 	int emptyInode = findEmptyInode();
 	if(emptyDataBlock == -1 || emptyInode == -1){
-		printf("사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		errmsg("mytouch: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
 		free(arg);
 		return;
 	}
@@ -223,7 +223,7 @@ void mytouch(char **commands)
 
 	int how = howUseWriteDirectory(inode_number_base);
 	if(how < 0){
-        printf("데이터블럭이 부족합니다\n");
+        errmsg("mytouch: 데이터블럭이 부족합니다\n");
         free(arg);
 		free(path);
 		free(finalStr);
@@ -251,7 +251,7 @@ void mytouch(char **commands)
 		inode_number = findEmptyInode();
 
 		if(inode_number == -1){
-			printf("사용할 수 있는 inode가 없습니다\n");
+			errmsg("mytouch: 사용할 수 있는 inode가 없습니다\n");
 			free(arg);
 			free(path);
 			free(finalStr);
@@ -259,7 +259,7 @@ void mytouch(char **commands)
 		}
 		int dataBlock_num = findEmptyDataBlock();
 		if(dataBlock_num == -1){
-			printf("사용할 수 있는 datablock이 없습니다\n");
+			errmsg("mytouch: 사용할 수 있는 datablock이 없습니다\n");
 			free(arg);
 			free(path);
 			free(finalStr);
@@ -288,7 +288,7 @@ void mymkdir(char **commands)
 {
 	if (*(commands + 1) == NULL)
     {
-        errmsg("인자가 불충분합니다.\n");
+        errmsg("mymkdir: 인자가 불충분합니다.\n");
         return;
     }
 
@@ -300,12 +300,12 @@ void mymkdir(char **commands)
 	int emptyDataBlock = findEmptyDataBlock();
 	int emptyInode = findEmptyInode();
 	if(emptyDataBlock == -1 || emptyInode == -1){
-		printf("사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		errmsg("mymkdir: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
 		return;
 	}
 
 	if(findNameToInode(arg) != 0){
-		printf("mymkdir: 디렉터리를 만들 수 없습니다: 파일이 있습니다\n");
+		errmsg("mymkdir: 디렉터리를 만들 수 없습니다: 파일이 있습니다\n");
 		return;
 	}
 
@@ -315,7 +315,7 @@ void mymkdir(char **commands)
 	int inode_number = findNameToBaseInode(arg, path, finalStr);
 
 	if(inode_number == 0){
-		printf("mymkdir: 디렉터리를 만들 수 없습니다: 그런 파일이나 디렉터리가 없습니다\n");
+		errmsg("mymkdir: 디렉터리를 만들 수 없습니다: 그런 파일이나 디렉터리가 없습니다\n");
 		free(arg);
 		free(path);
 		free(finalStr);
@@ -324,7 +324,7 @@ void mymkdir(char **commands)
 
 	int how = howUseWriteDirectory(inode_number);
 	if(how < 0){
-        printf("데이터블럭이 부족합니다\n");
+        errmsg("mymkdir: 데이터블럭이 부족합니다\n");
         free(arg);
 		free(path);
 		free(finalStr);
@@ -373,7 +373,7 @@ void myrmdir(char **commands)
 {
 	if (*(commands + 1) == NULL)
     {
-        errmsg("인자가 불충분합니다.\n");
+        errmsg("myrmdir: 인자가 불충분합니다.\n");
         return;
     }
 	
@@ -390,7 +390,7 @@ void myrmdir(char **commands)
 
 	if (inode_number == 0)
 	{
-		printf("myrmdir: Cannot remove: No such file or directory.\n");
+		errmsg("myrmdir: Cannot remove: No such file or directory.\n");
 		free(arg);
 		free(path);
 		free(finalStr);
@@ -400,7 +400,7 @@ void myrmdir(char **commands)
 	InodeList inode_list = getInodeList(inode_number);
 	if (inode_list.file_mode == GENERAL)
 	{
-		printf("myrmdir: 제거 실패: 디렉터리가 아닙니다\n");
+		errmsg("myrmdir: 제거 실패: 디렉터리가 아닙니다\n");
 		free(arg);
 		free(path);
 		free(finalStr);
@@ -408,7 +408,7 @@ void myrmdir(char **commands)
 	}
 	else if (inode_list.size > 16)
 	{
-		printf("myrmdir: 제거 실패: 디렉터리가 비어있지 않음\n");
+		errmsg("myrmdir: 제거 실패: 디렉터리가 비어있지 않음\n");
 		free(arg);
 		free(path);
 		free(finalStr);
@@ -443,7 +443,7 @@ void myls(char **commands)
 
 		int f = findNameToInode(arg);
 		if(f == 0){
-			printf("myls: '%s'에 접근할 수 없음: 그런 파일이나 디렉터리가 없습니다\n", argument);
+			errmsg("myls: 그런 파일이나 디렉터리가 없습니다\n");
 			return;
 		}
 		else{
@@ -582,7 +582,7 @@ void mycd(char **commands)
 	}
 	if (cd(&working_directory, &depth_working_directory, path) == 0)
 	{ // If failed cd,
-		printf("Such directory doesn't exist\n");
+		errmsg("mycd: Such directory doesn't exist\n");
 	}
 	free(path);
 }
@@ -621,7 +621,7 @@ void mytree(char **commands)
 			clearVWD(&virtual_working_directory, virtual_depth_working_directory);
 		}
 		else
-			printf("Such directory doesn'y exist\n");
+			errmsg("mytree: Such directory doesn'y exist\n");
 		free(path);
 	}
 }

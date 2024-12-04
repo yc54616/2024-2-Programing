@@ -391,7 +391,7 @@ void mycat(char **commands)
 {
     if (*(commands + 1) == NULL)
     {
-        errmsg("인자가 불충분합니다.\n");
+        errmsg("mycat: 인자가 불충분합니다.\n");
         return;
     }
 
@@ -401,7 +401,7 @@ void mycat(char **commands)
 	int inode_number = findNameToInode(arg);
 
     if(inode_number == 0){
-        printf("mycat: 그런 파일이나 디렉터리가 없습니다\n");
+        errmsg("mycat: 그런 파일이나 디렉터리가 없습니다\n");
         free(arg);
         return;
     }
@@ -409,7 +409,7 @@ void mycat(char **commands)
     InodeList inodeList = getInodeList(inode_number);
 
     if(inodeList.file_mode == DIRECTORY){
-        printf("mycat: 파일이 아닙니다\n");
+        errmsg("mycat: 파일이 아닙니다\n");
         free(arg);
         return;
     }
@@ -461,7 +461,7 @@ void myshowfile(char **commands)
 	int inode_number = findNameToInode(arg);
 
     if(inode_number == 0){
-        printf("myshowfile: 그런 파일이나 디렉터리가 없습니다\n");
+        errmsg("myshowfile: 그런 파일이나 디렉터리가 없습니다\n");
         free(arg);
         return;
     }
@@ -469,7 +469,7 @@ void myshowfile(char **commands)
     InodeList inodeList = getInodeList(inode_number);
 
     if(inodeList.file_mode == DIRECTORY){
-        printf("mycat: 파일이 아닙니다\n");
+        errmsg("myshowfile: 파일이 아닙니다\n");
         free(arg);
         return;
     }
@@ -524,7 +524,7 @@ void mycp(char **commands)
 {
     if (commands[1] == NULL || commands[2] == NULL)
     {
-        printf("인자가 불충분합니다.\n"); // 임시
+        errmsg("mycp: 인자가 불충분합니다.\n"); // 임시
         return;
     }
 
@@ -536,14 +536,14 @@ void mycp(char **commands)
     int emptyDataBlock = findEmptyDataBlock();
 	int emptyInode = findEmptyInode();
 	if(emptyDataBlock == -1 || emptyInode == -1){
-		printf("사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
+		errmsg("mycp: 사용할 수 있는 DataBlock 또는 Inode가 부족합니다\n");
 		return;
 	}
 
 	int inode_number = findNameToInode(host_source_file);
 
     if(inode_number == 0){
-        printf("mycp: 파일이 존재하지 않습니다\n");
+        errmsg("mycp: 파일이 존재하지 않습니다\n");
         free(host_source_file);
         free(new_name);
         return;
@@ -562,7 +562,7 @@ void mycp(char **commands)
             inode_number_base = new_inode_number;
             
             if(strlen(host_source_file) > 7){
-                printf("File Name too long..\n");
+                errmsg("mycp: File Name too long..\n");
                 free(host_source_file);
                 free(new_name);
                 free(path);
@@ -574,7 +574,7 @@ void mycp(char **commands)
             }
 		}
 		else{
-            printf("mycp: 파일을 복사할 수 없습니다.\n");
+            errmsg("mycp: 파일을 복사할 수 없습니다.\n");
             free(host_source_file);
             free(new_name);
             free(path);
@@ -585,7 +585,7 @@ void mycp(char **commands)
 
     int how = howUseWriteDirectory(inode_number_base);
 	if(how < 0){
-        printf("데이터블럭이 부족합니다\n");
+        errmsg("mycp: 데이터블럭이 부족합니다\n");
         free(host_source_file);
         free(new_name);
         free(path);
@@ -668,7 +668,7 @@ void mycpto(char **commands)
 {
     if (*(commands + 1) == NULL || *(commands + 2) == NULL) 
     {
-        printf("인자가 불충분합니다.");
+        errmsg("mycpto: 인자가 불충분합니다.");
         return;
     }
 
@@ -680,7 +680,7 @@ void mycpto(char **commands)
 	int inode_number = findNameToInode(source_file);
 
     if(inode_number == 0){
-        printf("mycat: 그런 파일이나 디렉터리가 없습니다\n");
+        errmsg("mycpto: 그런 파일이나 디렉터리가 없습니다\n");
         free(source_file);
         free(host_dest_file);
         return;
@@ -689,7 +689,7 @@ void mycpto(char **commands)
     InodeList inodeList = getInodeList(inode_number);
 
     if(inodeList.file_mode == DIRECTORY){
-        printf("mycat: 파일이 아닙니다\n");
+        errmsg("mycpto: 파일이 아닙니다\n");
         free(source_file);
         free(host_dest_file);
         return;
@@ -735,7 +735,7 @@ void mycpfrom(char **commands)
 {
     if (commands[1] == NULL || commands[2] == NULL)
     {
-        printf("인자가 불충분합니다.\n"); // 임시
+        errmsg("mycpfrom: 인자가 불충분합니다.\n"); // 임시
         return;
     }
 
@@ -763,7 +763,7 @@ void mycpfrom(char **commands)
             inode_number_base = new_inode_number;
             
             if(strlen(host_source_file) > 7){
-                printf("File Name too long..\n");
+                errmsg("mycpfrom: File Name too long..\n");
                 free(host_source_file);
                 free(new_name);
                 free(path);
@@ -775,7 +775,7 @@ void mycpfrom(char **commands)
             }
 		}
 		else{
-            printf("파일을 옮길 수 없습니다.\n");
+            errmsg("mycpfrom: 파일을 옮길 수 없습니다.\n");
             free(host_source_file);
             free(new_name);
             free(path);
@@ -786,7 +786,7 @@ void mycpfrom(char **commands)
 
     int how = howUseWriteDirectory(inode_number_base);
 	if(how < 0){
-        printf("데이터블럭이 부족합니다\n");
+        errmsg("mycpfrom: 데이터블럭이 부족합니다\n");
         free(host_source_file);
         free(new_name);
         free(path);
@@ -806,7 +806,7 @@ void mycpfrom(char **commands)
     host_txt = fopen(host_source_file, "r");
     if (host_txt == NULL)
     {
-        printf("그런 호스트 파일이 없습니다.\n");
+        errmsg("mycpfrom: 그런 호스트 파일이 없습니다.\n");
         free(host_source_file);
         free(new_name);
         free(path);
@@ -820,7 +820,7 @@ void mycpfrom(char **commands)
     int size = howUseDataBlockInode();
 
     if(host_txt_size > (SIZE_DATABLOCK * size) && size <= 8){
-        printf("데이터블럭이 부족합니다\n");
+        errmsg("mycpfrom: 데이터블럭이 부족합니다\n");
         free(host_source_file);
         free(new_name);
         free(path);
@@ -829,7 +829,7 @@ void mycpfrom(char **commands)
         return;
     }
     else if(host_txt_size > (SIZE_DATABLOCK * (size - 1)) && size > 8){
-        printf("데이터블럭이 부족합니다\n");
+        errmsg("mycpfrom: 데이터블럭이 부족합니다\n");
         free(host_source_file);
         free(new_name);
         free(path);
