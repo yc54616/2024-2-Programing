@@ -431,7 +431,7 @@ void myls(char **commands)
 {
 	char *argument = *(commands+1);
 	unsigned char *arg = NULL;
-	unsigned char(*properties_of_children)[8] = NULL;
+	unsigned char **properties_of_children = NULL;
 
 	bool thisIsFile = false;
 
@@ -481,7 +481,15 @@ void myls(char **commands)
 		}
 
 		int count_files = workingInodeList.size / 8;
-		properties_of_children = (unsigned char(*)[8])calloc(sizeof(unsigned char(*)[8]), count_files); // We will make this sorted.
+		for(int i = 0; i < 8; i++){
+
+		}
+
+		properties_of_children = (unsigned char **)calloc(sizeof(unsigned char*), count_files);
+		for(int i = 0; i < count_files; i++){
+			*(properties_of_children+i) = (unsigned char *)calloc(sizeof(unsigned char), 8);
+		}
+		
 		int count_listed_files = 0;
 
 		for (int i = 0; i < workingInodeList.reference_count - indirect_point_cnt; i++)
@@ -529,7 +537,10 @@ void myls(char **commands)
 			printf("\n");
 		}
 
-		// free(properties_of_children);
+		for(int i = 0; i < count_files; i++){
+			free(*(properties_of_children+i));
+		}
+		free(properties_of_children);
 	}
 }
 
