@@ -19,7 +19,12 @@ void deleteInDirectory(int inode){
 		indirect_point_cnt = *(cntDataBlock.contents);
 	}
 
-	for (int i = 0; i < inodeList.reference_count - 1; i++)
+	int size = inodeList.reference_count;
+    if(inodeList.single_indirect_address != 0){
+        size -= 1;
+    }
+
+	for (int i = 0; i < size; i++)
 	{
 		initDataBlock(*(inodeList.direct_address+i));
 		setSuperBlock(SIZE_INODELIST + *(inodeList.direct_address+i) + 1, 0);
