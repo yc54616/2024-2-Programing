@@ -3,48 +3,59 @@
 
 #include "io_stream.h"
 
-int howUseDataBlockInode(){
+int howUseDataBlockInode()
+{
 	int notUse = 0;
 	SuperBlock superblock = getSuperBlock();
-	for(int i = 0; i < 256; i++){
-		if(superblock.data_block[i/8].first_bit == 0){
+	for (int i = 0; i < 256; i++)
+	{
+		if (superblock.data_block[i / 8].first_bit == 0)
+		{
 			notUse++;
 		}
-		superblock.data_block[i/8].for_shift <<= 1;
+		superblock.data_block[i / 8].for_shift <<= 1;
 	}
 	return notUse;
 }
 
-// 0인 비어있는 inode superblock 찾기 
-int findEmptyInode(){
+// 0인 비어있는 inode superblock 찾기
+int findEmptyInode()
+{
 	SuperBlock superblock = getSuperBlock();
-	for(int i = 0; i < 128; i++){
-		if(superblock.inode_list[i/8].first_bit == 0){
-			return i+1;
+	for (int i = 0; i < 128; i++)
+	{
+		if (superblock.inode_list[i / 8].first_bit == 0)
+		{
+			return i + 1;
 		}
-		superblock.inode_list[i/8].for_shift <<= 1;
+		superblock.inode_list[i / 8].for_shift <<= 1;
 	}
 	return -1;
 }
 
-// 0인 비어있는 datablock superblock 찾기 
-int findEmptyDataBlock(){
+// 0인 비어있는 datablock superblock 찾기
+int findEmptyDataBlock()
+{
 	SuperBlock superblock = getSuperBlock();
-	for(int i = 0; i < 256; i++){
-		if(superblock.data_block[i/8].first_bit == 0){
+	for (int i = 0; i < 256; i++)
+	{
+		if (superblock.data_block[i / 8].first_bit == 0)
+		{
 			return i;
 		}
-		superblock.data_block[i/8].for_shift <<= 1;
+		superblock.data_block[i / 8].for_shift <<= 1;
 	}
 	return -1;
 }
 
 // address : Indirect주소
 // datablockIndex : Indirect주소에 쓸 datablockaddress
-void writeIndirectDataBlock(int address, int datablockIndex){
+void writeIndirectDataBlock(int address, int datablockIndex)
+{
 	DataBlock data_Block = getDataBlock(datablockIndex);
 	int size = data_Block.contents[0];
-	if(size == 256){
+	if (size == 256)
+	{
 		return;
 	}
 	size += 1;
@@ -55,12 +66,14 @@ void writeIndirectDataBlock(int address, int datablockIndex){
 
 // datablockIndex : datablock 인덱스
 // startIndex : 지워질 8바이트 시작 주소
-void deleteDirectoryDataBlock(int datablockIndex, int startIndex){
+void deleteDirectoryDataBlock(int datablockIndex, int startIndex)
+{
 	DataBlock data_Block = getDataBlock(datablockIndex);
-	//unsigned char test[SIZE_DATABLOCK] = dBlock.contents[SIZE_DATABLOCK];
+	// unsigned char test[SIZE_DATABLOCK] = dBlock.contents[SIZE_DATABLOCK];
 	int i;
-	for(i = 0; i < 8; i++){
-		data_Block.contents[i+startIndex] = 0;
+	for (i = 0; i < 8; i++)
+	{
+		data_Block.contents[i + startIndex] = 0;
 	}
 	setDataBlock(datablockIndex, data_Block.contents);
 }
@@ -68,14 +81,16 @@ void deleteDirectoryDataBlock(int datablockIndex, int startIndex){
 // name : 디렉토리 이름, 마지막 바이트에는 가리키는 inode ex) lo     7
 // datablockIndex : datablock 인덱스
 // startIndex : name이 써질 datablock 안에 index (max=>256) 8씩 띄어져서 저장됨
-void writeDirectoryDataBlock(char name[], int datablockIndex, int startIndex){
+void writeDirectoryDataBlock(char name[], int datablockIndex, int startIndex)
+{
 	DataBlock data_Block = getDataBlock(datablockIndex);
-	//unsigned char test[SIZE_DATABLOCK] = dBlock.contents[SIZE_DATABLOCK];
+	// unsigned char test[SIZE_DATABLOCK] = dBlock.contents[SIZE_DATABLOCK];
 	int i;
-	for(i = 0; i < 7; i++){
-		data_Block.contents[i+startIndex] = name[i];
+	for (i = 0; i < 7; i++)
+	{
+		data_Block.contents[i + startIndex] = name[i];
 	}
-	data_Block.contents[startIndex+7] = name[7];
+	data_Block.contents[startIndex + 7] = name[7];
 	setDataBlock(datablockIndex, data_Block.contents);
 }
 
@@ -114,8 +129,12 @@ void initFilesystem()
 {
 
 	SuperBlock sb; // = getSuperBlock();
-	InodeList in[SIZE_INODELIST] = {0,}; //SIZE_INODELIST == 128
-	DataBlock db[SIZE_DATABLOCK] = {0,};  //SIZE_DATABLOCK == 256
+	InodeList in[SIZE_INODELIST] = {
+		0,
+	}; // SIZE_INODELIST == 128
+	DataBlock db[SIZE_DATABLOCK] = {
+		0,
+	}; // SIZE_DATABLOCK == 256
 	int i, j;
 	for (int i = 0; i < 16; i++)
 	{
@@ -132,7 +151,8 @@ void initFilesystem()
 		in[i].birth_date = 0;
 		in[i].size = 0;
 		in[i].reference_count = 0;
-		for (int j = 0; j < SIZE_DIRECT_POINTER; j++) {
+		for (int j = 0; j < SIZE_DIRECT_POINTER; j++)
+		{
 			in[i].direct_address[j] = 0;
 		}
 		in[i].single_indirect_address = 0;
@@ -187,7 +207,7 @@ void setSuperBlock(int bitIndex, bool bit)
 
 // index : inode index
 void initInodeList(int index) // 1~128
-{																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
+{							  // 1 ~ 384로 inode와 datablock index 다 합쳐서
 	FILE *file;
 	int i;
 	file = fopen(FILENAME, "r+");
@@ -219,10 +239,10 @@ void initInodeList(int index) // 1~128
 // date: date
 // size: file size
 // address: 일단 SingleIndirect이더라도 맨 첫 배열만 사용
-// reference_count : 다이렉트 포인터, 인다이렉트 포인터  
+// reference_count : 다이렉트 포인터, 인다이렉트 포인터
 void setInodeList(int index, bool file_mode, time_t access_date, time_t birth_date, unsigned int size, unsigned char reference_count, unsigned char *direct_address, unsigned char single_indirect_address) // 1~128
-{																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
-FILE *file;
+{																																																			// 1 ~ 384로 inode와 datablock index 다 합쳐서
+	FILE *file;
 	int i;
 	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
@@ -249,7 +269,7 @@ FILE *file;
 
 // address : datablock address
 void initDataBlock(int address) // 1~128
-{																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
+{								// 1 ~ 384로 inode와 datablock index 다 합쳐서
 	FILE *file;
 	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
@@ -260,10 +280,11 @@ void initDataBlock(int address) // 1~128
 	// 8 -> 0,7
 	// 128 -> 15,7
 	DataBlock db;
-	for(int i = 0; i < SIZE_DATABLOCK; i++){
+	for (int i = 0; i < SIZE_DATABLOCK; i++)
+	{
 		db.contents[i] = 0;
 	}
-	
+
 	fseek(file, sizeof(DataBlock) * address, SEEK_CUR);
 	fwrite(&db, sizeof(db), 1, file);
 
@@ -273,7 +294,7 @@ void initDataBlock(int address) // 1~128
 // address : datablock address
 // type : directory=1 general file=0
 void setDataBlock(int address, unsigned char *contents) // 1~128
-{																											  // 1 ~ 384로 inode와 datablock index 다 합쳐서
+{														// 1 ~ 384로 inode와 datablock index 다 합쳐서
 	FILE *file;
 	file = fopen(FILENAME, "r+");
 	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
@@ -284,10 +305,11 @@ void setDataBlock(int address, unsigned char *contents) // 1~128
 	// 8 -> 0,7
 	// 128 -> 15,7
 	DataBlock db;
-	for(int i = 0; i < SIZE_DATABLOCK; i++){
+	for (int i = 0; i < SIZE_DATABLOCK; i++)
+	{
 		db.contents[i] = contents[i];
 	}
-	
+
 	fseek(file, sizeof(DataBlock) * address, SEEK_CUR);
 	fwrite(&db, sizeof(db), 1, file);
 
@@ -321,12 +343,12 @@ InodeList getInodeList(int Inode)
 
 	// prepare to read file
 	file = fopen(FILENAME, "r+");
-	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
+	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR);				   // skip boot sector
 	fseek(file, SIZE_SUPERBLOCK * sizeof(Byte), SEEK_CUR); // skip superblock sector
 	// I recommend you to use the form of "SIZE * sizeof its unit" becauseof consistency of the whole code.
 
-	fseek(file, sizeof(InodeList) * ( Inode - 1 ), SEEK_CUR); // The first Inode starts at 1.
-	fread(&result, sizeof(InodeList), 1, file); // read
+	fseek(file, sizeof(InodeList) * (Inode - 1), SEEK_CUR); // The first Inode starts at 1.
+	fread(&result, sizeof(InodeList), 1, file);				// read
 
 	fclose(file);
 	return result;
@@ -342,13 +364,13 @@ DataBlock getDataBlock(int Address)
 
 	// prepare to read file
 	file = fopen(FILENAME, "r+");
-	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR); // skip boot sector
-	fseek(file, SIZE_SUPERBLOCK * sizeof(Byte), SEEK_CUR);     // skip superblock sector
+	fseek(file, SIZE_BOOTBLOCK, SEEK_CUR);					   // skip boot sector
+	fseek(file, SIZE_SUPERBLOCK * sizeof(Byte), SEEK_CUR);	   // skip superblock sector
 	fseek(file, SIZE_INODELIST * sizeof(InodeList), SEEK_CUR); // skip superblock sector
 	// I recommend you to use the form of "SIZE * sizeof its unit" becauseof consistency of the whole code.
 
 	fseek(file, sizeof(DataBlock) * Address, SEEK_CUR); // The first Block Address starts at 0.
-	fread(&result, sizeof(DataBlock), 1, file); // read
+	fread(&result, sizeof(DataBlock), 1, file);			// read
 
 	fclose(file);
 	return result;

@@ -10,35 +10,39 @@ chainedDirectory *working_directory;
 int depth_working_directory;
 
 // inode : FILE inode address -> datablock만 지움
-void deleteInDirectory(int inode){
+void deleteInDirectory(int inode)
+{
 	InodeList inodeList = getInodeList(inode);
 	DataBlock cntDataBlock;
 	int indirect_point_cnt = 0;
-	if(inodeList.single_indirect_address != 0){
+	if (inodeList.single_indirect_address != 0)
+	{
 		cntDataBlock = getDataBlock(inodeList.single_indirect_address);
 		indirect_point_cnt = *(cntDataBlock.contents);
 	}
 
 	int size = inodeList.reference_count;
-    if(inodeList.single_indirect_address != 0){
-        size -= 1;
-    }
+	if (inodeList.single_indirect_address != 0)
+	{
+		size -= 1;
+	}
 
 	for (int i = 0; i < size; i++)
 	{
-		initDataBlock(*(inodeList.direct_address+i));
-		setSuperBlock(SIZE_INODELIST + *(inodeList.direct_address+i) + 1, 0);
+		initDataBlock(*(inodeList.direct_address + i));
+		setSuperBlock(SIZE_INODELIST + *(inodeList.direct_address + i) + 1, 0);
 	}
 
 	bool indirectAddressUse = (inodeList.reference_count > SIZE_DIRECT_POINTER) ? true : false;
 
 	if (indirectAddressUse)
 	{
-		if(inodeList.single_indirect_address != 0){
+		if (inodeList.single_indirect_address != 0)
+		{
 			for (int i = 1; i <= indirect_point_cnt; i++)
 			{
-				initDataBlock(*(cntDataBlock.contents+i));
-				setSuperBlock(SIZE_INODELIST + *(cntDataBlock.contents+i) + 1, 0);
+				initDataBlock(*(cntDataBlock.contents + i));
+				setSuperBlock(SIZE_INODELIST + *(cntDataBlock.contents + i) + 1, 0);
 			}
 		}
 		initDataBlock(inodeList.single_indirect_address);
@@ -53,149 +57,159 @@ void deleteDirectory(char *name, int inode)
 	InodeList inodeList = getInodeList(inode);
 	DataBlock cntDataBlock;
 	int indirect_point_cnt = 0;
-	if(inodeList.single_indirect_address != 0){
+	if (inodeList.single_indirect_address != 0)
+	{
 		cntDataBlock = getDataBlock(inodeList.single_indirect_address);
 		indirect_point_cnt = *(cntDataBlock.contents);
 	}
 	time_t curTime;
 	time(&curTime);
 
-	unsigned char endStr[8] = {0,};
-	
+	unsigned char endStr[8] = {
+		0,
+	};
+
 	bool indirectAddressUse = (inodeList.reference_count > SIZE_DIRECT_POINTER) ? true : false;
 
 	if (indirectAddressUse)
 	{
 		DataBlock dataTmp = getDataBlock(cntDataBlock.contents[indirect_point_cnt]);
-		for(int k = 0; k < 8; k++)
-			endStr[k] = dataTmp.contents[(inodeList.size-8)%256+k];
-		
-		deleteDirectoryDataBlock(cntDataBlock.contents[indirect_point_cnt], (inodeList.size-8)%256); // data block 마지막 지우기 
+		for (int k = 0; k < 8; k++)
+			endStr[k] = dataTmp.contents[(inodeList.size - 8) % 256 + k];
+
+		deleteDirectoryDataBlock(cntDataBlock.contents[indirect_point_cnt], (inodeList.size - 8) % 256); // data block 마지막 지우기
 		inodeList.size -= 8;
 
-		if(inodeList.size%256 == 0 && indirect_point_cnt == 1){ // indirect 주소가 마지막 1개 남았는데 지워졌을 때
-			setSuperBlock(SIZE_INODELIST+cntDataBlock.contents[indirect_point_cnt], 0); // 데이터 블럭 해제
-			initDataBlock(cntDataBlock.contents[indirect_point_cnt]); // 데이터 블럭 초기화
-			setSuperBlock(SIZE_INODELIST+inodeList.single_indirect_address, 0); // indirect 데이터 블럭 해제
-			initDataBlock(inodeList.single_indirect_address); // indirect 데이터 블럭 초기화
+		if (inodeList.size % 256 == 0 && indirect_point_cnt == 1)
+		{																				  // indirect 주소가 마지막 1개 남았는데 지워졌을 때
+			setSuperBlock(SIZE_INODELIST + cntDataBlock.contents[indirect_point_cnt], 0); // 데이터 블럭 해제
+			initDataBlock(cntDataBlock.contents[indirect_point_cnt]);					  // 데이터 블럭 초기화
+			setSuperBlock(SIZE_INODELIST + inodeList.single_indirect_address, 0);		  // indirect 데이터 블럭 해제
+			initDataBlock(inodeList.single_indirect_address);							  // indirect 데이터 블럭 초기화
 			inodeList.single_indirect_address = 0;
 			inodeList.reference_count -= 1;
 		}
-		else if(inodeList.size%256 == 0){ // indirect 주소 dataaddress가 한개인데 지워졌을 때
-			setSuperBlock(SIZE_INODELIST+cntDataBlock.contents[indirect_point_cnt], 0); // 데이터 블럭 해제
-			initDataBlock(cntDataBlock.contents[indirect_point_cnt]); // 데이터 블럭 초기화
+		else if (inodeList.size % 256 == 0)
+		{																				  // indirect 주소 dataaddress가 한개인데 지워졌을 때
+			setSuperBlock(SIZE_INODELIST + cntDataBlock.contents[indirect_point_cnt], 0); // 데이터 블럭 해제
+			initDataBlock(cntDataBlock.contents[indirect_point_cnt]);					  // 데이터 블럭 초기화
 			cntDataBlock.contents[cntDataBlock.contents[0]] = 0;
 			cntDataBlock.contents[0] -= 1;
 			setDataBlock(inodeList.single_indirect_address, cntDataBlock.contents);
 			inodeList.reference_count -= 1;
 		}
 
-		setInodeList(inode, DIRECTORY, curTime, inodeList.birth_date, inodeList.size, inodeList.reference_count, inodeList.direct_address, inodeList.single_indirect_address); // data block 마지막 지우기 
+		setInodeList(inode, DIRECTORY, curTime, inodeList.birth_date, inodeList.size, inodeList.reference_count, inodeList.direct_address, inodeList.single_indirect_address); // data block 마지막 지우기
 
 		inodeList = getInodeList(inode);
 		indirect_point_cnt = 0;
-		if(inodeList.single_indirect_address != 0){
+		if (inodeList.single_indirect_address != 0)
+		{
 			cntDataBlock = getDataBlock(inodeList.single_indirect_address);
 			indirect_point_cnt = *(cntDataBlock.contents);
 		}
 
 		for (int i = 0; i < inodeList.reference_count - indirect_point_cnt; i++)
 		{
-			DataBlock data_block = getDataBlock(*(inodeList.direct_address+i));
+			DataBlock data_block = getDataBlock(*(inodeList.direct_address + i));
 
-			for(int j = 0; j < SIZE_DATABLOCK/8; j++){
-				if(strncmp(name, data_block.subfiles[j], 7) == 0){
-					writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address+i), j*8);
-					writeDirectoryDataBlock(endStr, *(inodeList.direct_address+i), j*8);
+			for (int j = 0; j < SIZE_DATABLOCK / 8; j++)
+			{
+				if (strncmp(name, data_block.subfiles[j], 7) == 0)
+				{
+					writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address + i), j * 8);
+					writeDirectoryDataBlock(endStr, *(inodeList.direct_address + i), j * 8);
 				}
 			}
 		}
-		if(inodeList.single_indirect_address != 0){
+		if (inodeList.single_indirect_address != 0)
+		{
 			for (int i = 1; i <= indirect_point_cnt; i++)
 			{
-				DataBlock data_block = getDataBlock(*(cntDataBlock.contents+i));
+				DataBlock data_block = getDataBlock(*(cntDataBlock.contents + i));
 
-				for(int j = 0; j < SIZE_DATABLOCK/8; j++){
-					if(strncmp(name, data_block.subfiles[j], 7) == 0){
-						writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address+i), j*8);
-						writeDirectoryDataBlock(endStr, cntDataBlock.contents[indirect_point_cnt], j*8);
+				for (int j = 0; j < SIZE_DATABLOCK / 8; j++)
+				{
+					if (strncmp(name, data_block.subfiles[j], 7) == 0)
+					{
+						writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address + i), j * 8);
+						writeDirectoryDataBlock(endStr, cntDataBlock.contents[indirect_point_cnt], j * 8);
 					}
 				}
 			}
 		}
-		
-
-		
 	}
-	else // directs 주소에 저장할 때 
+	else // directs 주소에 저장할 때
 	{
-		DataBlock dataTmp = getDataBlock(inodeList.direct_address[inodeList.reference_count-1]);
+		DataBlock dataTmp = getDataBlock(inodeList.direct_address[inodeList.reference_count - 1]);
 
-		for(int k = 0; k < 8; k++)
-			endStr[k] = dataTmp.contents[(inodeList.size-8)%256+k];
-		
-		deleteDirectoryDataBlock(inodeList.direct_address[inodeList.reference_count-1], (inodeList.size-8)%256); // data block 마지막 지우기 
+		for (int k = 0; k < 8; k++)
+			endStr[k] = dataTmp.contents[(inodeList.size - 8) % 256 + k];
+
+		deleteDirectoryDataBlock(inodeList.direct_address[inodeList.reference_count - 1], (inodeList.size - 8) % 256); // data block 마지막 지우기
 		inodeList.size -= 8;
 
-		if(inodeList.size%256 == 0){
-			setSuperBlock(SIZE_INODELIST+inodeList.direct_address[inodeList.reference_count-1], 0);
-			initDataBlock(inodeList.direct_address[inodeList.reference_count-1]);
-			inodeList.direct_address[inodeList.reference_count-1] = 0;
+		if (inodeList.size % 256 == 0)
+		{
+			setSuperBlock(SIZE_INODELIST + inodeList.direct_address[inodeList.reference_count - 1], 0);
+			initDataBlock(inodeList.direct_address[inodeList.reference_count - 1]);
+			inodeList.direct_address[inodeList.reference_count - 1] = 0;
 			inodeList.reference_count -= 1;
 		}
 
-		setInodeList(inode, DIRECTORY, curTime, inodeList.birth_date, inodeList.size, inodeList.reference_count, inodeList.direct_address, inodeList.single_indirect_address); // data block 마지막 지우기 
+		setInodeList(inode, DIRECTORY, curTime, inodeList.birth_date, inodeList.size, inodeList.reference_count, inodeList.direct_address, inodeList.single_indirect_address); // data block 마지막 지우기
 
 		inodeList = getInodeList(inode);
 
 		for (int i = 0; i < inodeList.reference_count - indirect_point_cnt; i++)
 		{
-			DataBlock data_block = getDataBlock(*(inodeList.direct_address+i));
+			DataBlock data_block = getDataBlock(*(inodeList.direct_address + i));
 
-			for(int j = 0; j < SIZE_DATABLOCK/8; j++){
-				if(strncmp(name, data_block.subfiles[j], 7) == 0){
-					writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address+i), j*8);
-					writeDirectoryDataBlock(endStr, *(inodeList.direct_address+i), j*8);
+			for (int j = 0; j < SIZE_DATABLOCK / 8; j++)
+			{
+				if (strncmp(name, data_block.subfiles[j], 7) == 0)
+				{
+					writeDirectoryDataBlock("\x00\x00\x00\x00\x00\x00\x00\x00", *(inodeList.direct_address + i), j * 8);
+					writeDirectoryDataBlock(endStr, *(inodeList.direct_address + i), j * 8);
 				}
 			}
 		}
 	}
-
-	
-
-	
 }
 
 int howUseWriteDirectory(int inode)
 {
-	InodeList inode_list = getInodeList(inode);	
+	InodeList inode_list = getInodeList(inode);
 	time_t curTime;
 	time(&curTime);
 	int useDataBlockInode, indirectAddress;
 
-	bool indirectAddressUse = ((inode_list.reference_count > SIZE_DIRECT_POINTER) || (inode_list.reference_count == SIZE_DIRECT_POINTER && inode_list.size%256 == 0)) ? true : false;
+	bool indirectAddressUse = ((inode_list.reference_count > SIZE_DIRECT_POINTER) || (inode_list.reference_count == SIZE_DIRECT_POINTER && inode_list.size % 256 == 0)) ? true : false;
 
 	if (indirectAddressUse)
 	{
 		int i = 0;
-		if(inode_list.single_indirect_address == 0){ // 처음 indirect_address 에 저장할 때, indirect_address으로 사용할 데이터 block 찾기
+		if (inode_list.single_indirect_address == 0)
+		{ // 처음 indirect_address 에 저장할 때, indirect_address으로 사용할 데이터 block 찾기
 			i++;
 		}
 
-		if(inode_list.size%256 == 0){ // 새로운 데이터 블럭을 생성해야 할 때
+		if (inode_list.size % 256 == 0)
+		{ // 새로운 데이터 블럭을 생성해야 할 때
 			i++;
 		}
 
-		return (howUseDataBlockInode() - i);	
+		return (howUseDataBlockInode() - i);
 	}
-	else // directs 주소에 저장할 때 
+	else // directs 주소에 저장할 때
 	{
 		int i = 0;
-		if(inode_list.size%256 == 0){
+		if (inode_list.size % 256 == 0)
+		{
 			i++;
 		}
 
-		return (howUseDataBlockInode() - i);	
+		return (howUseDataBlockInode() - i);
 	}
 }
 
@@ -204,25 +218,28 @@ int howUseWriteDirectory(int inode)
 // 현재 wokring 디렉토리에 문자를 쓰도록 설계됨
 void writeDirectory(char *name, int inode, int type)
 {
-	InodeList inode_list = getInodeList(inode);	
+	InodeList inode_list = getInodeList(inode);
 	time_t curTime;
 	time(&curTime);
 	int useDataBlockInode, indirectAddress;
 
-	bool indirectAddressUse = ((inode_list.reference_count > SIZE_DIRECT_POINTER) || (inode_list.reference_count == SIZE_DIRECT_POINTER && inode_list.size%256 == 0)) ? true : false;
+	bool indirectAddressUse = ((inode_list.reference_count > SIZE_DIRECT_POINTER) || (inode_list.reference_count == SIZE_DIRECT_POINTER && inode_list.size % 256 == 0)) ? true : false;
 
 	if (indirectAddressUse)
 	{
-		if(inode_list.single_indirect_address == 0){ // 처음 indirect_address 에 저장할 때, indirect_address으로 사용할 데이터 block 찾기
+		if (inode_list.single_indirect_address == 0)
+		{ // 처음 indirect_address 에 저장할 때, indirect_address으로 사용할 데이터 block 찾기
 			useDataBlockInode = findEmptyDataBlock();
-			inode_list.single_indirect_address = useDataBlockInode;			
+			inode_list.single_indirect_address = useDataBlockInode;
 			setSuperBlock(SIZE_INODELIST + useDataBlockInode + 1, 1);
 		}
-		else{
+		else
+		{
 			useDataBlockInode = inode_list.single_indirect_address; // 이미 indirect_address 가 지정되어 있을 때
 		}
 
-		if(inode_list.size%256 == 0){ // 새로운 데이터 블럭을 생성해야 할 때
+		if (inode_list.size % 256 == 0)
+		{ // 새로운 데이터 블럭을 생성해야 할 때
 			indirectAddress = findEmptyDataBlock();
 			inode_list.reference_count += 1;
 			setSuperBlock(SIZE_INODELIST + indirectAddress + 1, 1);
@@ -231,31 +248,32 @@ void writeDirectory(char *name, int inode, int type)
 
 		DataBlock db = getDataBlock(useDataBlockInode);
 		indirectAddress = db.contents[db.contents[0]]; // indirect_address은 데이터블럭의 [0]이 크기를 저장함
-		writeDirectoryDataBlock(name, indirectAddress, (inode_list.size)%256);
+		writeDirectoryDataBlock(name, indirectAddress, (inode_list.size) % 256);
 		setInodeList(inode, type, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
-		
 	}
-	else // directs 주소에 저장할 때 
+	else // directs 주소에 저장할 때
 	{
-		if(inode_list.size%256 == 0){
+		if (inode_list.size % 256 == 0)
+		{
 			useDataBlockInode = findEmptyDataBlock();
 			inode_list.direct_address[inode_list.reference_count] = useDataBlockInode;
 			inode_list.reference_count += 1;
 			setSuperBlock(SIZE_INODELIST + useDataBlockInode + 1, 1);
 		}
 
-		writeDirectoryDataBlock(name, inode_list.direct_address[inode_list.reference_count - 1], inode_list.size%256);
+		writeDirectoryDataBlock(name, inode_list.direct_address[inode_list.reference_count - 1], inode_list.size % 256);
 		setInodeList(inode, type, curTime, inode_list.birth_date, inode_list.size + 8, inode_list.reference_count, inode_list.direct_address, inode_list.single_indirect_address);
 	}
 }
 
-int getNowWorkingDirectoryInodeNumber() {
+int getNowWorkingDirectoryInodeNumber()
+{
 	return working_directory->my_inode_number;
 }
 
 // return 값은 최종 디렉토리 inode, finalStr에 값이 마지막 이름이 담김, 존재하지 않은 파일이나, 디렉토리만 사용가능
-// ../../../a -> 라면 ../../../ 의 디렉토리 indoe가 return, finalStr에는 a 문자열이 담김 
-// argument : 인자값 
+// ../../../a -> 라면 ../../../ 의 디렉토리 indoe가 return, finalStr에는 a 문자열이 담김
+// argument : 인자값
 // tmpStr : 빈 배열
 unsigned char findNameToBaseInode(char *argument, unsigned char *tmpPath, unsigned char *tmpFinalStr)
 {
@@ -264,7 +282,8 @@ unsigned char findNameToBaseInode(char *argument, unsigned char *tmpPath, unsign
 	unsigned char *finalStr = NULL;
 	bool flag = false;
 
-	if(argument == NULL){
+	if (argument == NULL)
+	{
 		return 0;
 	}
 
@@ -273,12 +292,14 @@ unsigned char findNameToBaseInode(char *argument, unsigned char *tmpPath, unsign
 	strcpy(path, argument);
 	strcpy(ptmp, argument);
 
-	for (char *p = strtok(ptmp, "/"); p!=NULL; p = strtok(NULL, "/")){
+	for (char *p = strtok(ptmp, "/"); p != NULL; p = strtok(NULL, "/"))
+	{
 		finalStr = (unsigned char *)realloc(finalStr, sizeof(unsigned char) * strlen(p));
 		strcpy(finalStr, p);
 	}
 
-	for(int i = 0;  i < strlen(finalStr); i++){
+	for (int i = 0; i < strlen(finalStr); i++)
+	{
 		path[strlen(argument) - i - 1] = 0;
 	}
 
@@ -287,8 +308,9 @@ unsigned char findNameToBaseInode(char *argument, unsigned char *tmpPath, unsign
 	chainedDirectory *virtual_working_directory;
 	int virtual_depth_working_directory = depth_working_directory;
 	copyWorkingDirectory(&virtual_working_directory);
-	
-	if(cd(&virtual_working_directory, &virtual_depth_working_directory, path) == 0){
+
+	if (cd(&virtual_working_directory, &virtual_depth_working_directory, path) == 0)
+	{
 		free(path);
 		free(ptmp);
 		free(finalStr);
@@ -297,21 +319,25 @@ unsigned char findNameToBaseInode(char *argument, unsigned char *tmpPath, unsign
 
 	free(path);
 	free(ptmp);
-	
-	if(strcmp(finalStr, "..") == 0){
+
+	if (strcmp(finalStr, "..") == 0)
+	{
 		free(finalStr);
 		return 0;
 	}
-	else if(strcmp(finalStr, ".") == 0){
+	else if (strcmp(finalStr, ".") == 0)
+	{
 		free(finalStr);
 		return 0;
 	}
-	
-	if(strlen(finalStr) > 7){
+
+	if (strlen(finalStr) > 7)
+	{
+
 		free(finalStr);
 		return 0;
 	}
-	
+
 	strcpy(tmpFinalStr, finalStr);
 	free(finalStr);
 
@@ -326,7 +352,8 @@ unsigned char findNameToInode(char *argument)
 	bool flag = false;
 	bool first = false;
 
-	if(argument == NULL){
+	if (argument == NULL)
+	{
 		return 0;
 	}
 
@@ -334,13 +361,15 @@ unsigned char findNameToInode(char *argument)
 	ptmp = (unsigned char *)calloc(sizeof(unsigned char), strlen(argument));
 	strcpy(path, argument);
 	strcpy(ptmp, argument);
-	
-	for (char *p = strtok(ptmp, "/"); p!=NULL; p = strtok(NULL, "/")){
+
+	for (char *p = strtok(ptmp, "/"); p != NULL; p = strtok(NULL, "/"))
+	{
 		finalStr = (unsigned char *)realloc(finalStr, sizeof(unsigned char) * strlen(p));
 		strcpy(finalStr, p);
 	}
-	
-	for(int i = 0;  i < strlen(finalStr); i++){
+
+	for (int i = 0; i < strlen(finalStr); i++)
+	{
 		path[strlen(argument) - i - 1] = 0;
 	}
 
@@ -348,7 +377,8 @@ unsigned char findNameToInode(char *argument)
 	int virtual_depth_working_directory = depth_working_directory;
 	copyWorkingDirectory(&virtual_working_directory);
 
-	if(cd(&virtual_working_directory, &virtual_depth_working_directory, path) == 0){
+	if (cd(&virtual_working_directory, &virtual_depth_working_directory, path) == 0)
+	{
 		free(path);
 		free(ptmp);
 		free(finalStr);
@@ -357,21 +387,25 @@ unsigned char findNameToInode(char *argument)
 
 	free(path);
 	free(ptmp);
-	
-	if(strcmp(finalStr, "..") == 0){
+
+	if (strcmp(finalStr, "..") == 0)
+	{
 		free(finalStr);
 		return virtual_working_directory->parent->my_inode_number;
 	}
-	else if(strcmp(finalStr, ".") == 0){
+	else if (strcmp(finalStr, ".") == 0)
+	{
 		free(finalStr);
 		return virtual_working_directory->my_inode_number;
 	}
-	
-	if(strlen(finalStr) > 7){
+
+	if (strlen(finalStr) > 7)
+	{
 		free(finalStr);
 		return 0;
 	}
-	else if(finalStr == NULL){
+	else if (finalStr == NULL)
+	{
 		free(finalStr);
 		return 0;
 	}
@@ -379,20 +413,24 @@ unsigned char findNameToInode(char *argument)
 	InodeList inodelist = getInodeList(virtual_working_directory->my_inode_number);
 	DataBlock cntDataBlock;
 	int indirect_point_cnt = 0;
-	if(inodelist.single_indirect_address != 0){
+	if (inodelist.single_indirect_address != 0)
+	{
 		cntDataBlock = getDataBlock(inodelist.single_indirect_address);
 		indirect_point_cnt = *(cntDataBlock.contents);
 	}
 
-	char compareStr[8] = {0,};
-	for(int i = 0; i < inodelist.reference_count - indirect_point_cnt; i++){
-		DataBlock data_block = getDataBlock(*(inodelist.direct_address+i));
+	char compareStr[8] = {
+		0,
+	};
+	for (int i = 0; i < inodelist.reference_count - indirect_point_cnt; i++)
+	{
+		DataBlock data_block = getDataBlock(*(inodelist.direct_address + i));
 
 		int cnt = 0;
 		int *inodes = NULL;
 		for (int i = 0; i < sizeof(DataBlock); i++)
 		{
-			if ((i + 1) % 8 == 0 && *(data_block.contents+i) != 0)
+			if ((i + 1) % 8 == 0 && *(data_block.contents + i) != 0)
 			{
 				cnt++;
 				inodes = (int *)realloc(inodes, sizeof(int) * cnt);
@@ -400,7 +438,8 @@ unsigned char findNameToInode(char *argument)
 			}
 		}
 
-		for(int i = 1; i < cnt; i++){
+		for (int i = 1; i < cnt; i++)
+		{
 			memset(compareStr, 0, sizeof(compareStr));
 			for (int j = 0; j < 7; j++)
 			{
@@ -417,16 +456,17 @@ unsigned char findNameToInode(char *argument)
 		free(inodes);
 	}
 
-	if(inodelist.single_indirect_address != 0){
+	if (inodelist.single_indirect_address != 0)
+	{
 		for (int i = 1; i <= indirect_point_cnt; i++)
 		{
-			DataBlock data_block = getDataBlock(*(cntDataBlock.contents+i));
+			DataBlock data_block = getDataBlock(*(cntDataBlock.contents + i));
 
 			int cnt = 0;
 			int *inodes = NULL;
 			for (int i = 0; i < sizeof(DataBlock); i++)
 			{
-				if ((i + 1) % 8 == 0 && *(data_block.contents+i) != 0)
+				if ((i + 1) % 8 == 0 && *(data_block.contents + i) != 0)
 				{
 					cnt++;
 					inodes = (int *)realloc(inodes, sizeof(int) * cnt);
@@ -434,7 +474,8 @@ unsigned char findNameToInode(char *argument)
 				}
 			}
 
-			for(int i = 1; i < cnt; i++){
+			for (int i = 1; i < cnt; i++)
+			{
 				memset(compareStr, 0, sizeof(compareStr));
 				for (int j = 0; j < 7; j++)
 				{
@@ -909,11 +950,13 @@ void mydatablock(char **commands)
 	}
 
 	data_block = getDataBlock(block_address);
-	for (i = 0; i < sizeof(data_block); i++) printf("%c", data_block.contents[i]);
+	for (i = 0; i < sizeof(data_block); i++)
+		printf("%c", data_block.contents[i]);
 	printf("\n");
 }
 
-void mystate(char **commands) {
+void mystate(char **commands)
+{
 	SuperBlock super_block;
 	int i, j, k;
 	int index;

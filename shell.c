@@ -28,7 +28,7 @@ commands[2].command("a bc")
 
 /* definitions of global variable */
 extern chainedDirectory *working_directory; // It makes a stack.
-extern int depth_working_directory; // It refers to the depth which is the number how many directories are there to reach here from '/'
+extern int depth_working_directory;         // It refers to the depth which is the number how many directories are there to reach here from '/'
 /* example
  * /home/yhj/advanced_programming/project => 4
  * / => 0
@@ -104,16 +104,17 @@ void Print_WD()
  @return void
  */
     chainedDirectory *virtual_working_directory = working_directory;
-    char (*linked_directories)[8];
+    char(*linked_directories)[8];
     char c;
     int i;
-    
+
     /* Coping real w.d into virtual w.d */
-    linked_directories = (char (*)[8])malloc(sizeof(char (*)[8]) * depth_working_directory);
-    for (i = 0; i < depth_working_directory; i++) {
-        strncpy(*(linked_directories + i), virtual_working_directory -> my_name, 7);
-	(*(linked_directories + i))[7] = '\0';
-        virtual_working_directory = virtual_working_directory -> parent; // exploring
+    linked_directories = (char(*)[8])malloc(sizeof(char(*)[8]) * depth_working_directory);
+    for (i = 0; i < depth_working_directory; i++)
+    {
+        strncpy(*(linked_directories + i), virtual_working_directory->my_name, 7);
+        (*(linked_directories + i))[7] = '\0';
+        virtual_working_directory = virtual_working_directory->parent; // exploring
     }
     /* Now, the array consists of directories in descending order.
      * ex)  /as/df/gh
@@ -122,9 +123,9 @@ void Print_WD()
      * So, we need to read this from backward.
      */
     for (i = depth_working_directory - 1; i >= 0; i--)
-	    printf("/%s", *(linked_directories + i));
+        printf("/%s", *(linked_directories + i));
     if (depth_working_directory == 0)
-	    printf("/");
+        printf("/");
     printf(" ");
     free(linked_directories);
 }
@@ -178,33 +179,35 @@ int ExecuteCommand(char **command)
 int main(void)
 {
     // 선언들
-    working_directory = (chainedDirectory *) malloc(sizeof(chainedDirectory));
-    working_directory -> my_name[0] = '\0';
-    working_directory -> my_inode_number = 1;
-    working_directory -> parent = working_directory;
+    working_directory = (chainedDirectory *)malloc(sizeof(chainedDirectory));
+    working_directory->my_name[0] = '\0';
+    working_directory->my_inode_number = 1;
+    working_directory->parent = working_directory;
     depth_working_directory = 0;
     int index = 0;
     bool execution_result; // 명령어 실행 성공 여부
     char *inputString;
     char *temp;
-    char *command[500] = {0,};                              // 배열의 한 칸이 char*으로, 하나의 단어를 지칭
+    char *command[500] = {
+        0,
+    };                                               // 배열의 한 칸이 char*으로, 하나의 단어를 지칭
     char *computer_id = "red", *user_id = "redmint"; // 컴퓨터 및 사용자 ID
     // 실행코드
-    char *tempCommand = (char *)calloc(sizeof(char), 1);  
+    char *tempCommand = (char *)calloc(sizeof(char), 1);
     tempCommand[0] = '!';
     mymkfs(&tempCommand);
     free(tempCommand);
-    
+
     while (1)
     { // {1.ID및 WD출력   2.command 입력받기 실행하기} 반복
-	/* 정상화 */
-	printf("[");
-        //Print_ID(computer_id, user_id);
+        /* 정상화 */
+        printf("[");
+        // Print_ID(computer_id, user_id);
         Print_WD();
-	/* 의 신 */
-	printf("]$ ");
+        /* 의 신 */
+        printf("]$ ");
         GetInput(&inputString);
-        
+
         temp = malloc(sizeof(char) * strlen(inputString) + 1);
         strcpy(temp, inputString);
         if (inputString[0] == '\0') // 입력값이 없을 경우 continue;
@@ -217,7 +220,8 @@ int main(void)
 
         if (execution_result == 0) // exit 명령어 처리 및 Command not found
         {
-            if (strcmp(command[0], "exit") == 0) {
+            if (strcmp(command[0], "exit") == 0)
+            {
                 printf("Bye....\n");
                 return 0; // 프로그램 종료
             }
@@ -225,8 +229,8 @@ int main(void)
             // printf("Command \"%s\" not found\n", command[0]);
             continue;
         }
-	printf("\n");
-    free(temp);
+        printf("\n");
+        free(temp);
     }
 }
 // shell
