@@ -563,7 +563,7 @@ void mycp(char **commands)
     int inode_number_base = findNameToBaseInode(new_name, path, dest_file);
     int new_inode_number = findNameToInode(new_name);
 
-    if (inode_number_base == 0)
+    if (inode_number_base == 0 || new_inode_number == 0)
     {
         errmsg("mycp: 파일을 복사할 수 없습니다.\n");
         free(host_source_file);
@@ -817,7 +817,7 @@ void mycpfrom(char **commands)
 
     int new_inode_number = findNameToInode(new_name);
 
-    if (inode_number_base == 0)
+    if (inode_number_base == 0 || new_inode_number == 0)
     {
         errmsg("mycpfrom: 파일을 옮길 수 없습니다.\n");
         free(host_source_file);
