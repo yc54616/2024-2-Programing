@@ -13,6 +13,12 @@ extern int depth_working_directory;
 static void _Tree(unsigned char *, unsigned char, int, char *, int);
 
 /* It's for qsort */
+int _compare_files2(const void *file1, const void *file2)
+{
+	return strncmp(*(unsigned char **)file1, *(unsigned char **)file2, 7);
+}
+
+/* It's for qsort */
 int _compare_files(const void *file1, const void *file2)
 {
 	return strncmp((unsigned char *)file1, (unsigned char *)file2, 7);
@@ -520,7 +526,7 @@ void myls(char **commands)
 				}
 			}
 		}
-		qsort(properties_of_children, count_files, sizeof(unsigned char *), _compare_files);
+		qsort(properties_of_children, count_files, sizeof(unsigned char *), _compare_files2);
 
 		for (int i = 0; i < count_files; i++)
 		{
