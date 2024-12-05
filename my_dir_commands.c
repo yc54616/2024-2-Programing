@@ -236,7 +236,7 @@ void mytouch(char **commands)
 
 	int inode_number_base = findNameToBaseInode(arg, path, finalStr);
 
-	if (inode_number == 0 || inode_number_base == 0)
+	if (inode_number_base == 0)
 	{
 		errmsg("mytouch: 파일을 만들 수 없습니다\n");
 		free(arg);
