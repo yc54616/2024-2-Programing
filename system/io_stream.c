@@ -146,7 +146,7 @@ void setBit(Byte *byte, int index, bool bit)
 void initFilesystem()
 {
 
-	SuperBlock sb; // = getSuperBlock();
+	SuperBlock sb = {0,}; // = getSuperBlock();
 	InodeList in[SIZE_INODELIST] = {
 		0,
 	}; // SIZE_INODELIST == 128
