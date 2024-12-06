@@ -7,6 +7,7 @@
 #	include <stdbool.h>
 
 #	include "file_system.h"
+int dataBlockPossible(int host_txt_size);
 int howUseDataBlockInode();
 int findEmptyInode();
 int findEmptyDataBlock();

@@ -184,6 +184,8 @@ int howUseWriteDirectory(int inode)
 	time(&curTime);
 	int useDataBlockInode, indirectAddress;
 
+	int how = howUseDataBlockInode();
+
 	bool indirectAddressUse = ((inode_list.reference_count > SIZE_DIRECT_POINTER) || (inode_list.reference_count == SIZE_DIRECT_POINTER && inode_list.size % 256 == 0)) ? true : false;
 
 	if (indirectAddressUse)
@@ -199,7 +201,7 @@ int howUseWriteDirectory(int inode)
 			i++;
 		}
 
-		return (howUseDataBlockInode() - i);
+		return (how - i);
 	}
 	else // directs 주소에 저장할 때
 	{
@@ -209,7 +211,7 @@ int howUseWriteDirectory(int inode)
 			i++;
 		}
 
-		return (howUseDataBlockInode() - i);
+		return (how - i);
 	}
 }
 

@@ -629,6 +629,17 @@ void mycp(char **commands)
 
     InodeList inodeList = getInodeList(inode_number);
 
+    int host_txt_size = inodeList.size;
+    
+    if(dataBlockPossible(host_txt_size) < 0){
+        errmsg("mycp: 데이터블럭이 부족합니다\n");
+        free(host_source_file);
+        free(new_name);
+        free(path);
+        free(dest_file);
+        return;
+    }
+
     if (inodeList.file_mode == DIRECTORY)
     {
         errmsg("mycp: 디렉토리는 복사할 수 없습니다\n");
@@ -894,20 +905,7 @@ void mycpfrom(char **commands)
     fseek(host_txt, 0, SEEK_END);
     host_txt_size = ftell(host_txt);
 
-    int size = howUseDataBlockInode();
-
-    if (host_txt_size > (SIZE_DATABLOCK * size) && size <= 8)
-    {
-        errmsg("mycpfrom: 데이터블럭이 부족합니다\n");
-        free(host_source_file);
-        free(new_name);
-        free(path);
-        free(dest_file);
-        fclose(host_txt);
-        return;
-    }
-    else if (host_txt_size > (SIZE_DATABLOCK * (size - 1)) && size > 8)
-    {
+    if(dataBlockPossible(host_txt_size) < 0){
         errmsg("mycpfrom: 데이터블럭이 부족합니다\n");
         free(host_source_file);
         free(new_name);

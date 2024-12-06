@@ -3,6 +3,20 @@
 
 #include "io_stream.h"
 
+int dataBlockPossible(int host_txt_size){
+	int howSize = howUseDataBlockInode();
+
+    if (host_txt_size > (SIZE_DATABLOCK * howSize) && howSize <= 8)
+    {
+		return -1;
+    }
+    else if (host_txt_size > (SIZE_DATABLOCK * (howSize - 1)) && howSize > 8)
+    {
+		return -1;
+    }
+	return 1;
+} 
+
 int howUseDataBlockInode()
 {
 	int notUse = 0;
@@ -14,6 +28,10 @@ int howUseDataBlockInode()
 			notUse++;
 		}
 		superblock.data_block[i / 8].for_shift <<= 1;
+	}
+	for (int i = 0; i < 256; i++)
+	{
+		superblock.data_block[i / 8].for_shift >>= 1;
 	}
 	return notUse;
 }

@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "*.embeddedhtml": "html",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "stdio.h": "c",
+        "io_stream.h": "c",
+        "data_struct.h": "c",
+        "file_system.h": "c",
+        "stdbool.h": "c"
+    }
+}
